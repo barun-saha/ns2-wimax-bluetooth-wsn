@@ -1,0 +1,28 @@
+reset
+set terminal png
+set output "res_handover/timestamp.png"
+set nogrid
+#set logscale y
+set xlabel "Time (s)" 
+set ylabel "Packet ID"
+#set xrange [0:10]
+#set yrange [0:20]
+#set key 45,0.45
+set title "Wimax handover using Mobile IP\nTimestamp"
+plot "res_handover/delay.dat" using 2:1 title "Time sent" with p, \
+"res_handover/delay.dat" using 3:1 title "Time received" with p
+
+reset
+set terminal png
+set output "res_handover/delay.png"
+set nogrid
+#set logscale y
+set xlabel "Time (s)" 
+set ylabel "Delay (s)"
+#set xrange [0:10]
+#set yrange [0:20]
+#set key 45,0.45
+set log y
+set title "Wimax handover using Mobile IP\nPacket delay"
+plot "res_handover/delay.dat" using 3:($3-$2) notitle with p
+

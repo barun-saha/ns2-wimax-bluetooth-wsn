@@ -1,0 +1,29 @@
+# $Header: /home/rouil/cvsroot/ns-2.34/indep-utils/cmu-scen-gen/README,v 1.1.1.1 2008/04/11 18:40:30 rouil Exp $
+
+********** README for using CMU's connection pattern **************
+            ************** file generators ************
+
+A. Connection pattern file generator
+-------------------------------------
+Directory:
+~ns/indep-utils/cmu-scen-gen
+
+Files:
+cbrgen.tcl -- for generating CBR connections
+& for generating TCP connections
+
+Method:
+
+to create CBR/TCP connecions, run
+
+ns cbrgen.tcl [-type cbr|tcp] [-nn nodes] [-seed seed] [-mc connections]
+[-rate rate]
+
+For example ,
+ns cbrgen.tcl -type cbr -nn 10 -seed 1 -mc 8 -rate 4
+
+OR
+ns cbrgen.tcl -type tcp -nn 25 -seed 0 -mc 20
+
+note: You will need to pipe the outputs from above to a cbr-* or a tcp-*
+output file. 

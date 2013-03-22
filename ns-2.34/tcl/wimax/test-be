@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Bash file to run test BE algorithm and check BW allocation/collision
+# @author rouil
+
+RES_DIR=res_test_be #output directory
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    cd $RES_DIR
+    for nbMNs in "1" "3" "5" "7" "10" "15" "20"; do		
+	mkdir $nbMNs
+	cd $nbMNs
+	ln -s ../../../../PED_A
+	ln -s ../../../../BLER_LookupTable.txt
+	ln -s ../../../../BetaTable.txt
+	echo -n "Running for " $nbMNs ":"
+	ns ../../test-be.tcl $nbMNs &> log.t
+	SENT=`grep AGT out.res | grep cbr | grep -c ^s`
+	RECV=`grep "1 0" out.res | grep -c ^r `
+	BWR=`grep -c BWR out.res`
+	echo $nbMNs $SENT $RECV $BWR
+	echo $nbMNs $SENT $RECV $BWR >>../results.dat
+	#rm out.res
+	#rm log.t
+	cd ..
+    done
+    cd ..
+    gnuplot plot-test-be	
+fi

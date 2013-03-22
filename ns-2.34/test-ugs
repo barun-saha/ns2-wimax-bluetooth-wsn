@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Bash file to run test BE algorithm and check BW allocation/collision
+# @author rouil
+
+RES_DIR=res_test_ugs #output directory
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    for nbMNs in "1" "3" "5" "7" "10" ; do		
+	echo -n "Running org for " $nbMNs ":"
+	../ns-2.31-wimax-forum/ns test-1way-ugs.tcl $nbMNs &> /dev/null 
+	SENT=`grep AGT ugs.tr | grep cbr | grep ^s| awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{print (8*size/(stop-start))}'`
+	RECV=`grep "1 0" ugs.tr | grep ^r | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6-20}END{print (8*size/(stop-start))}'`
+	FRG=`grep -c FRG ugs.tr`
+	LOSS=`grep -c ^d ugs.tr`
+	echo $nbMNs $SENT $RECV $FRG $LOSS
+	echo $nbMNs $SENT $RECV $FRG $LOSS >>$RES_DIR/results_org.dat
+
+	echo -n "Running fix for " $nbMNs ":"
+	ns test-1way-ugs.tcl $nbMNs &> /dev/null 
+	SENT=`grep AGT ugs.tr | grep cbr | grep ^s| awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{print (8*size/(stop-start))}'`
+	RECV=`grep "1 0" ugs.tr | grep ^r | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6-20}END{print (8*size/(stop-start))}'`
+	FRG=`grep -c FRG ugs.tr`
+	LOSS=`grep -c ^d ugs.tr`
+	echo $nbMNs $SENT $RECV $FRG $LOSS
+	echo $nbMNs $SENT $RECV $FRG $LOSS >>$RES_DIR/results_fix.dat	
+
+	#rm ugs.tr
+	#rm log.t
+    done
+    gnuplot plot-test-ugs	
+fi

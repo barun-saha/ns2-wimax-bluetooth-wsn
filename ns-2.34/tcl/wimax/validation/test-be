@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Bash file to run test BE algorithm and check BW allocation/collision
+# @author rouil
+
+RES_DIR=res_test_be #output directory
+
+source "ns-parse-lib.sh"
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    for nbMNs in "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "25" "30"; do		
+    #for nbMNs in "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15"; do		
+	echo -n "Running for " $nbMNs ":"
+	ns test-be.tcl $nbMNs ul &>/dev/null 
+	SENT=`collect_datarate "out_be.res" "^s.*AGT.*cbr" "1"`
+	RECV=`collect_datarate "out_be.res" "^r.*1 0 cbr" "0"`
+	BWR=`grep -c BWR out_be.res`
+	DELAY_JITTER=`collect_delay_jitter "out_be.res" "^s.*AGT.*cbr" "1" "^r.*1 0 cbr" "0"`
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER >>$RES_DIR/results_ul.dat
+
+	ns test-be.tcl $nbMNs dl &>/dev/null
+	SENT=`collect_datarate "out_be.res" "^+.*0 1 cbr" "0"`
+	RECV=`collect_datarate "out_be.res" "^r.*AGT.*cbr" "1"`
+	BWR=`grep -c BWR out_be.res`
+	DELAY_JITTER=`collect_delay_jitter "out_be.res" "^+.*0 1 cbr" "0" "^r.*AGT.*cbr" "1"`
+
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER >>$RES_DIR/results_dl.dat
+	rm out_be.res
+	#rm log.t
+    done
+    gnuplot plot-test-be	
+fi

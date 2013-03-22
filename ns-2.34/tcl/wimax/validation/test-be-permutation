@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Bash file to run test BE algorithm and check BW allocation/collision
+# @author rouil
+
+RES_DIR=res_test_be #output directory
+
+source "ns-parse-lib.sh"
+
+function run_scen {
+    DLPERM=$1
+    ULPERM=$2
+
+if [ "$1" == "clean" ]; then
+    rm -r ${RES_DIR}_${DLPERM}_${ULPERM}
+else
+    mkdir ${RES_DIR}_${DLPERM}_${ULPERM}
+    for nbMNs in "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "25"; do		    #for nbMNs in "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15"; do		
+	echo -n "Running for " $nbMNs ":"
+	ns test-be-permutation.tcl $nbMNs ul $DLPERM $ULPERM &>/dev/null 
+	SENT=`collect_datarate "out_be_${DLPERM}_${ULPERM}.res" "^s.*AGT.*cbr" "1"`
+	RECV=`collect_datarate "out_be_${DLPERM}_${ULPERM}.res" "^r.*1 0 cbr" "0"`
+	BWR=`grep -c BWR out_be_${DLPERM}_${ULPERM}.res`
+	DELAY_JITTER=`collect_delay_jitter "out_be_${DLPERM}_${ULPERM}.res" "^s.*AGT.*cbr" "1" "^r.*1 0 cbr" "0"`
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER >>${RES_DIR}_${DLPERM}_${ULPERM}/results_ul.dat
+
+	ns test-be-permutation.tcl $nbMNs dl $DLPERM $ULPERM &>/dev/null
+	SENT=`collect_datarate "out_be_${DLPERM}_${ULPERM}.res" "^+.*0 1 cbr" "0"`
+	RECV=`collect_datarate "out_be_${DLPERM}_${ULPERM}.res" "^r.*AGT.*cbr" "1"`
+	BWR=`grep -c BWR out_be_${DLPERM}_${ULPERM}.res`
+	DELAY_JITTER=`collect_delay_jitter "out_be_${DLPERM}_${ULPERM}.res" "^+.*0 1 cbr" "0" "^r.*AGT.*cbr" "1"`
+
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER
+	echo $nbMNs $SENT $RECV $BWR $DELAY_JITTER >>${RES_DIR}_${DLPERM}_${ULPERM}/results_dl.dat
+	rm out_be_${DLPERM}_${ULPERM}.res
+	#rm log.t
+    done
+fi
+}
+
+run_scen "PUSC" "PUSC" &
+run_scen "FUSC" "OPUSC" &
+run_scen "OFUSC" "PUSC" &
+run_scen "AMC" "AMC" &
+
+#gnuplot plot-test-be2
+    

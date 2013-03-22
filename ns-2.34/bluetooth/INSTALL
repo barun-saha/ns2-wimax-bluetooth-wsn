@@ -1,0 +1,51 @@
+=== install from tar ball ===
+
+1. get ns-allinone-2.28.tar.gz
+   wget ftp://ftp.isi.edu/nsnam/ns-allinone-2.28.tar.gz
+   verify the md5sum: 781af1921b224fea43fa47920d862c3b
+
+#1. get ns-allinone-2.27.tar.gz
+#   wget ftp://ftp.isi.edu/nsnam/ns-allinone-2.27.tar.gz
+#   verify the md5sum: 340201cf484e43813322c271444bae1f
+#
+#1. get ns-allinone-2.26.tar.gz
+#   wget ftp://ftp.isi.edu/nsnam/ns-allinone-2.26.tar.gz
+#   verify the md5sum: 913ce410227347ea0019eef57d139ec4
+
+2. get ucbt-xx.tgz
+   http://www.ececs.uc.edu/~cdmc/ucbt/src
+
+3. tar zxvf ns-allinone-2.28.tar.gz
+
+4. cd ns-allinone-2.28/ns-2.28/ 
+   	tar zxvf ../../ucbt-xx.tgz
+   Assume ucbt-xx.tgz and ns-allinone-2.28.tar.gz are in the same
+   directory.
+
+5. cd ucbt-xx/
+      	./install-bt
+   or
+	./install-bt -d  # enable debug
+   or
+	./install-bt -t  # install tcl-debug
+
+   ucbt-xx will be linked as bluetooth. 
+
+6. If you want debug enabled, while the debug option is not enable in the 
+   above step, 
+	cd patch/ns-2.28 
+	./enable-ns-debug.sh 
+
+7. try some tests:
+	cd test/
+	../../ns test.tcl > test.out
+
+8. to generate mobile scaniro:
+	cd tools && make
+   then you can use the modified setdest program.
+
+9. to recompile if you make some changes to the source code:
+	make # in bluetooth/
+
+   If you did a lot of changes, see file UPGRADDE
+

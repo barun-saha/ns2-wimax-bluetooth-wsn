@@ -1,0 +1,42 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]; then
+    echo
+    echo "$0 runs "
+    echo
+    exit 1
+fi
+
+mydir=`dirname $0`
+
+runs=$1
+
+mkdir 1f-linear
+cd 1f-linear
+$mydir/bt-liner-mm-t1 $runs 5 256
+$mydir/rungnuplot.sh gnuplot 20 fig5.dat fig1.eps 1.42 0.99
+
+$mydir/bt-liner-mm-t1 $runs 9 256
+$mydir/rungnuplot.sh gnuplot 20 fig9.dat fig2.eps 2.0 0.99
+
+bt-liner-mm-t1 $runs 15 256
+$mydir/rungnuplot.sh gnuplot 20 fig15.dat fig3.eps 2.9 0.99
+
+bt-liner-mm-t1 $runs 21 256
+$mydir/rungnuplot.sh gnuplot 20 fig21.dat fig4.eps 3.7 0.99
+
+mkdir tcl out
+mv *.tcl tcl
+mv *.out out
+
+cd ..
+mkdir 1f-nonlinear
+cd 1f-nonlinear
+$mydir/bt-nonliner-mm-t1 $runs 7 256
+$mydir/bt-nonliner-mm-t1 $runs 15 256
+
+mkdir tcl out
+mv *.tcl tcl
+mv *.out out
+cd ..
+

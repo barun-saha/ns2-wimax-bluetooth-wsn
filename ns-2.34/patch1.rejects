@@ -1,0 +1,368 @@
+--- ns-2.34/apps/udp.cc	2009-06-14 19:35:44.000000000 +0200
++++ ns-2.34/apps/udp.cc	2009-11-12 15:43:11.000000000 +0100
+@@ -93,7 +93,12 @@
+ 
+ 	double local_time = Scheduler::instance().clock();
+ 	while (n-- > 0) {
+-		p = allocpkt();
++        
++        // Alterated by The Manna Research Group
++        // Used by mannasim - wireless sensor networks simulator.
++		// p = allocpkt(); 
++		p = allocpkt(sizeof(data));
++
+ 		hdr_cmn::access(p)->size() = size_;
+ 		hdr_rtp* rh = hdr_rtp::access(p);
+ 		rh->flags() = 0;
+@@ -108,7 +113,10 @@
+ 	}
+ 	n = nbytes % size_;
+ 	if (n > 0) {
+-		p = allocpkt();
++
++		//p = allocpkt(); Alterado pelo grupo Manna
++		p = allocpkt(sizeof(data));
++
+ 		hdr_cmn::access(p)->size() = n;
+ 		hdr_rtp* rh = hdr_rtp::access(p);
+ 		rh->flags() = 0;
+--- ns-2.34/common/ns-process.h	2009-06-14 19:35:44.000000000 +0200
++++ ns-2.34/common/ns-process.h	2009-11-12 15:43:11.000000000 +0100
+@@ -84,9 +84,22 @@
+ 	// pub/sub ADU
+ 	PUBSUB,
+ 	
+-	//Diffusion ADU
++	// Diffusion ADU
+ 	DIFFUSION_DATA,
+ 
++	// Inserted by The Manna Research Group
++    // ADUs used by mannasim - wireless sensor networks
++    // simulator.
++    SENSED_DATA, 
++	MANAGEMENT_DATA,
++    
++    ON_DEMAND_DATA,
++	ON_DEMAND_PARAMETER,
++    
++    VIDEO_SENSED_DATA,
++	TEMPERATURE_SENSED_DATA,
++	CARBON_MONOXIDE_SENSED_DATA,
++
+ 	// Last ADU
+ 	ADU_LAST
+ 
+@@ -107,6 +120,13 @@
+ 	// The following two methods MUST be rewrited for EVERY derived classes
+ 	virtual int size() const { return sizeof(AppData); }
+ 	virtual AppData* copy() = 0;
++
++    // Inserted by The Manna Research Group
++    // Data functions for On Demand Sensing - these functions should
++    // be overwritten by specific application data types as temperatura
++    // AppData for example.
++    virtual bool compareData(AppData* data, int operation) {return false;}  
++    virtual bool checkEvent(AppData* data_) {return false;}
+ };
+ 
+ // Models any entity that is capable of process an ADU. 
+--- ns-2.34/common/packet.cc	2009-06-14 19:35:44.000000000 +0200
++++ ns-2.34/common/packet.cc	2009-11-12 15:43:11.000000000 +0100
+@@ -61,6 +61,8 @@
+ Packet* Packet::free_;			// free list
+ int hdr_cmn::offset_;			// static offset of common header
+ int hdr_flags::offset_;			// static offset of flags header
++// MIT_uAMPS
++int hdr_rca::offset_;                   // static offset of rca header
+ 
+ 
+ PacketHeaderClass::PacketHeaderClass(const char* classname, int hdrlen) : 
+--- ns-2.34/common/packet.h	2009-06-14 19:35:44.000000000 +0200
++++ ns-2.34/common/packet.h	2009-11-12 15:43:11.000000000 +0100
+@@ -70,6 +70,10 @@
+ //#define HDR_DIFF(p)     (hdr_diff::access(p))  /* SCADD's diffusion ported into ns */
+ #define HDR_LMS(p)		(hdr_lms::access(p))
+ 
++// MIT uAmps
++#define HDR_RCA(p)       ((struct hdr_rca*)(p)->access(hdr_rca::offset()))
++#define HDR_MACSensor(p) ((struct hdr_macSensor*)(p)->access(hdr_mac::offset_))
++
+ /* --------------------------------------------------------------------*/
+ 
+ /*
+@@ -182,8 +186,11 @@
+ 	// AOMDV packet
+ static const packet_t PT_AOMDV = 61;
+ 
++        // For Mannasim; inserted by Christian Schultz
++static const packet_t PT_RCA = 62;
++
+         // insert new packet types here
+-static packet_t       PT_NTYPE = 62; // This MUST be the LAST one
++static packet_t       PT_NTYPE = 63; // This MUST be the LAST one
+ 
+ enum packetClass
+ {
+@@ -383,6 +390,9 @@
+ 		// AOMDV patch
+ 		name_[PT_AOMDV]= "AOMDV";
+ 
++		// MIT_uAMPS; For Mannasim; inserted by Christian Schultz
++                name_[PT_RCA] = "rca";
++
+ 		name_[PT_NTYPE]= "undefined";
+ 	}
+ 	static int addPacket(char *name);
+@@ -521,6 +531,9 @@
+         u_int8_t        incoming;
+ 
+ 	//monarch extns end;
++
++	// MIT_uAMPS
++        static void PrintRcHeader(Packet *p, char *layer);
+ };
+ 
+ /* 
+@@ -636,6 +649,58 @@
+ 	inline ModulationScheme& mod_scheme() { return (mod_scheme_); }
+ };
+ 
++// MIT_uAMPS
++struct hdr_rca {
++       int msg_type_;
++       char meta_[1000];
++       int meta_size_;
++       float dist_to_dest_;
++       int dist_est_;
++       int rca_mac_src_;
++       int rca_mac_dst_;
++       int rca_link_src_;
++       int rca_link_dst_;
++       int code_;
++       static int offset_;     // offset for this header
++       inline static int& offset() { return offset_; }
++       inline static hdr_rca* access(Packet* p) {
++	       return (hdr_rca*) p->access(offset_);
++       }
++
++/* per-field member functions */
++       inline int& msg_type() { return (msg_type_); }
++       inline int& meta_size() { return (meta_size_); }
++       inline float& get_dist() { return (dist_to_dest_); }
++       inline int& dist_est() { return (dist_est_); }
++       inline void set_meta(const char* data) {
++                meta_size_ = strlen(data);
++                if (meta_size_ > maxmetasize()) {
++	                printf("Error:  Meta size %d too large (max = %d).\n", meta_size_, maxmetasize());
++                  	exit(1);
++                }
++	        memcpy(meta_, data, meta_size_+1);
++	}
++	inline void set_meta(const char * data, int size) {
++		if (size > maxmetasize())
++		{
++			printf("Error: Meta size %d too large (max = %d).\n", size, maxmetasize());
++			exit(1);
++		}
++		memcpy(meta_, data, size);
++		meta_size_ = size;
++	}
++        inline char* const meta() { return (meta_); }
++        inline int maxmetasize() { return (sizeof(meta_)); }
++        inline int& rca_mac_src() { return (rca_mac_src_); }
++        inline int& rca_mac_dst() { return (rca_mac_dst_); }
++	inline int& rca_link_src() { return (rca_link_src_); }
++        inline int& rca_link_dst() { return (rca_link_dst_); }
++        inline int& get_code() { return (code_); }
++        int base_X;
++        int base_Y;
++        inline int& get_base_X() { return (base_X); }
++        inline int& get_base_Y() { return (base_Y); }      
++};
+ 
+ class PacketHeaderClass : public TclClass {
+ protected:
+@@ -667,6 +732,11 @@
+ 		assert(p->data_ == 0);
+ 		p->uid_ = 0;
+ 		p->time_ = 0;
++
++		// MIT_uAMPS
++                hdr_rca* rca_hdr = HDR_RCA(p);
++                rca_hdr->meta_size_ = 0;
++
+ 	} else {
+ 		p = new Packet;
+ 		p->bits_ = new unsigned char[hdrlen_];
+@@ -740,6 +810,14 @@
+ 		p->data_ = data_->copy();
+ 	p->txinfo_.init(&txinfo_);
+  
++	// MIT_uAMPS
++        hdr_rca* ch = HDR_RCA(this);
++        hdr_rca* new_ch = HDR_RCA(p);
++        if (ch->meta_size_) {
++		new_ch->meta_size_ = ch->meta_size_;
++		memcpy(new_ch->meta_, ch->meta_, ch->meta_size_+1);
++        }
++
+ 	return (p);
+ }
+ 
+@@ -764,4 +842,12 @@
+         }
+ }
+ 
++// MIT_uAMPS
++inline void Packet::PrintRcHeader(Packet *p, char *layer)
++{
++	hdr_cmn *hdr = HDR_CMN(p);
++	hdr_rca *rca_hdr = HDR_RCA(p);
++	printf("%s Layer received: Type=%d data_size=%d\n\tMeta = %s\n\tSource = %x\n\tTarget = %x\n\tLink_target =%x\n",layer,rca_hdr->msg_type(), hdr->size(), rca_hdr->meta(),rca_hdr->rca_mac_src(), rca_hdr->rca_mac_dst(), rca_hdr->rca_link_dst());
++}
++
+ #endif
+--- ns-2.34/Makefile.in	2009-06-14 19:35:44.000000000 +0200
++++ ns-2.34/Makefile.in	2009-11-12 15:43:11.000000000 +0100
+@@ -328,6 +328,33 @@
+ 	wpan/p802_15_4sscs.o wpan/p802_15_4timer.o \
+ 	wpan/p802_15_4trace.o wpan/p802_15_4transac.o \
+ 	apps/pbc.o \
++    mannasim/accessPointApp.o \
++    mannasim/aggregateProcessing.o \
++    mannasim/battery.o \
++    mannasim/carbonMonoxideAppData.o \
++    mannasim/carbonMonoxideDataGenerator.o\
++    mannasim/clusterHeadApp.o \
++    mannasim/commonNodeApp.o \
++    mannasim/dataGenerator.o \
++    mannasim/onDemandData.o \
++    mannasim/onDemandParameter.o \
++    mannasim/processing.o \
++    mannasim/sensedData.o  \
++    mannasim/sensorBaseApp.o \
++    mannasim/sensorNode.o \
++    mannasim/temperatureAppData.o \
++    mannasim/temperatureDataGenerator.o\
++    mannasim/diffusion/nrAttributes.o\
++    mannasim/diffusion/commonNodeDiffApp.o \
++    mannasim/diffusion/accessPointDiffApp.o \
++    mannasim/leach/mac/leach-wireless-phy.o \
++    mannasim/leach/mac/mac-sensor.o \
++    mannasim/leach/mac/mac-sensor-timers.o \
++    mannasim/leach/rca/rca-ll.o \
++    mannasim/leach/rca/rcagent.o \
++    mannasim/leach/app/leachApp.o \
++    mannasim/leach/leachAgent.o \
++    mannasim/leach/app/accessPointLeachApp.o \
+ 	@V_STLOBJ@
+ 
+ 
+--- ns-2.34/tcl/lib/ns-default.tcl	2009-06-14 19:35:41.000000000 +0200
++++ ns-2.34/tcl/lib/ns-default.tcl	2009-11-12 15:43:11.000000000 +0100
+@@ -565,6 +565,54 @@
+ Node/MobileNode set DECAP_PORT 1
+ 
+ 
++# -----------------------------------------------------------------------------
++# Inserted by The Manna Research Group
++# Default values used by mannasim - wireless sensor networks simulator.
++# -----------------------------------------------------------------------------
++
++#DataGenerator set sensing_interval_ 0.0
++#DataGenerator set sensing_type_ 0
++
++DataGenerator/TemperatureDataGenerator set sensing_interval_ 0.0
++DataGenerator/TemperatureDataGenerator set sensing_type_ 0
++DataGenerator/TemperatureDataGenerator set avg_measure 25.0
++DataGenerator/TemperatureDataGenerator set std_deviation 1.0
++DataGenerator/TemperatureDataGenerator set maximumTemperatureValue 00.0
++
++DataGenerator/CarbonMonoxideDataGenerator set sensing_interval_ 0.0
++DataGenerator/CarbonMonoxideDataGenerator set sensing_type_ 0
++DataGenerator/CarbonMonoxideDataGenerator set avg_measure 3000.0
++DataGenerator/CarbonMonoxideDataGenerator set std_deviation 100.0
++DataGenerator/CarbonMonoxideDataGenerator set maximumCarbonMonoxideValue 0.0
++
++Application/SensorBaseApp set disseminating_type_ 0
++Application/SensorBaseApp set disseminating_interval_ 0.0
++Application/SensorBaseApp set destination_id_ 0
++
++Application/SensorBaseApp/CommonNodeApp set disseminating_type_ 0
++Application/SensorBaseApp/CommonNodeApp set disseminating_interval_ 0.0
++Application/SensorBaseApp/CommonNodeApp set destination_id_ 0
++
++Node/MobileNode/SensorNode set sensingPower_ 0.5
++Node/MobileNode/SensorNode set processingPower_ 0.5
++Node/MobileNode/SensorNode set instructionsPerSecond_ 100000000
++
++Application/AccessPointApp set outside_network_ 0
++Application/AccessPointApp set request_type_ 0
++Application/AccessPointApp set destination_id_ 0
++Application/AccessPointApp set node_id_ 0
++Application/AccessPointApp set diretorio 0
++
++#Application/SensorBaseApp/ClusterHeadApp/ClusterHeadMannaManagerApp set coverageInterval 0.0
++#Application/SensorBaseApp/ClusterHeadApp/ClusterHeadMannaManagerApp set groupInterval 0.0
++#Application/SensorBaseApp/ClusterHeadApp/ClusterHeadMannaManagerApp set initialGroupInterval 0.0
++#Application/SensorBaseApp/ClusterHeadApp/ClusterHeadMannaManagerApp set WIDTH 0
++#Application/SensorBaseApp/ClusterHeadApp/ClusterHeadMannaManagerApp set HEIGHT 0
++
++# -----------------------------------------------------------------------------
++
++
++
+ # Default settings for Hierarchical topology
+ #
+ # Bits are allocated for different fields like port, nodeid, mcast, 
+--- ns-2.34/tcl/lib/ns-lib.tcl	2009-06-14 19:35:41.000000000 +0200
++++ ns-2.34/tcl/lib/ns-lib.tcl	2009-11-12 15:43:11.000000000 +0100
+@@ -337,6 +337,9 @@
+ # change wrt Mike's code
+ #                  -eotTrace OFF
+ #                  -diffusionFilter "GradientFilter/OnePhasePullFilter/GeoRoutingFilter/RmstFilter/SourceRouteFilter/LogFilter/TagFilter"
++#
++# add by The Manna Research Group
++#                  -sensorNode ON
+ 
+ 
+ Simulator instproc addressType  {val} { $self set addressType_  $val }
+@@ -386,6 +389,8 @@
+ # change wrt Mike's code
+ Simulator instproc eotTrace  {val} { $self set eotTrace_  $val }
+ Simulator instproc diffusionFilter {val} {$self set diffFilter_ $val}
++# Inserted by The Manna Research Group; For Mannasim; inserted by Christian Schultz
++Simulator instproc sensorNode {val} {$self set sensorNode_ $val}
+ 
+ Simulator instproc MPLS { val } { 
+ 	if { $val == "ON" } {
+@@ -769,11 +774,28 @@
+ 	return $node
+ }
+ 
++# Simulator instproc create-node-instance args {
++#	$self instvar routingAgent_
++#	# DSR is a special case
++#	if {$routingAgent_ == "DSR"} {
++#		set nodeclass [$self set-dsr-nodetype]
++#	} else {
++#		set nodeclass Node/MobileNode
++#	}
++#	return [eval new $nodeclass $args]
++# }
++
++
++# Inserted by The Manna Research Group
++# Used by mannasim - wireless sensor network simulator
+ Simulator instproc create-node-instance args {
+-	$self instvar routingAgent_
++    $self instvar routingAgent_ sensorNode_
++    
+ 	# DSR is a special case
+ 	if {$routingAgent_ == "DSR"} {
+ 		set nodeclass [$self set-dsr-nodetype]
++    } elseif { [info exists sensorNode_] && $sensorNode_ == "ON"} {
++        set nodeclass Node/MobileNode/SensorNode
+ 	} else {
+ 		set nodeclass Node/MobileNode
+ 	}

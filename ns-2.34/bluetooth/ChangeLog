@@ -1,0 +1,110 @@
+[ucbt-0.9.8]
+ - Bug fix.
+ - Add toroidal distance model.
+ - Add rundemental Hold mode based bridge.
+ - Add a draft manual.
+ - Some scatternet formation work.
+ - Remove ns-2.27 support.
+
+[ucbt-0.9.7.3]
+ - bug fix.
+
+[ucbt-0.9.7.2]
+ - SCO disconnect
+
+[ucbt-0.9.7.1]
+ - SCO code improvement.
+ - gcc4 fix.
+ - bug fix.
+
+[ucbt-0.9.7.0]
+ - Rewrite recv-filter at baseband.  New code is supposed to be much clearer.
+ - Implement channel re-synchronization after SNIFF/HOLD.
+ - EDR (Enhanced Data Rate) support.
+ - Add DRP hook to DSDV.
+ - Add per flow statistics in BtStat.
+ - ns-2.28 support.
+
+[ucbt-0.9.6]
+ - DRP handle small amount of simple M/S bridges.
+ - A simple Tree based DRP algorithm is added.
+ - Initial scatternet formation code (not complete).
+ - add IFQ in the make-benp-connection
+
+[ucbt-0.9.5.4]
+ - Bug fixes related to AODV.
+
+[ucbt-0.9.5.3]
+ - Bug fixes.
+
+[ucbt-0.9.5.2]
+ - Bug fixes for link tear down code.
+
+[ucbt-0.9.5.1]
+ - Bug fixes for link tear down.
+
+[ucbt-0.9.5]
+ - Add limited scatternet support.  The scatternet is S/S bridge based.
+ - Add an energy model.
+ - Fragmentation is moved down to LMP layer.
+ - Add Manual routing.
+ - Remove ns-2.26 support.
+ - Add ns trace.
+ - Add tcldebug build option by flag -t.
+ - Trace format changes a little bit.  Receiver is added in receving event.
+ - Bug fixes.
+
+[ucbt-0.9.0.7]
+ - fix a bug regarding certain sized multi-slot packet.
+ - bug fix related to collison checking.
+ - add solaris x86 build.  This version should run on Linux, Solaris(sparc and
+   x86) and Cygwin.
+
+[ucbt-0.9.0.6]
+ - add cygwin build.
+
+[ucbt-0.9.0.5]
+ - fix bugs in interlaced scan.
+
+[ucbt-0.9.0.4]
+ - fix a compatibility issue bug in install script.
+
+[ucbt-0.9.0.3]
+ - fix a bug in install script.
+ - fix a bug involving in bridge table.
+
+[ucbt-0.9.0.2]
+ - fix a bug involving SCO.
+
+[ucbt-0.9.0.1]
+ - fix a bug in install script.
+ - add script for easy compilation for multiple instance of ucbt.
+
+[ucbt-0.9.0]
+ - updated to ns-2.27
+ - add interlaced scan.
+ - partical implementation of AFH.
+ - fix arq bugs. seqn is changed back to 1 bit.
+ - restructure part of the code to use class hierarchy.
+ - am/am_addr is replaced by lt_addr to reflect changes in spec 1.2.
+ - trace to files.
+ - remove QoS mapping.
+ _ remove supports for old ns versions.
+ - Bug fix.
+
+[ucbt-0.8.2]
+ - Bug fix.
+
+[ucbt-0.8.1]
+ - cygwin support
+
+[ucbt-0.8.0]
+ - T_poll is adjusted dynamically.
+ - Add scheduling Agorithms: DRR, ERR, PRR.
+ - SDP connection works, still no service handling yet.
+ - seqn is changed to 8 bits for debug purpose. Nothing is affected in 
+   terms of simulation.  ARQ has bugs in scatternet settings.
+ - Bug fix.
+
+[ucbt-0.7.1]
+ - Initial public preview.

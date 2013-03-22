@@ -1,0 +1,17 @@
+reset
+set terminal post eps
+set output "synch.eps"
+set nogrid
+#set logscale y
+set xlabel "dcd interval (s)" 
+set ylabel "Synchronization latency (s)"
+set xrange [0:10]
+set yrange [0:11]
+#set key 45,0.45
+set title "Thoeratical synchronization latency"
+plot "result1.dat" using 1:3 title "ucd interval=1s" with lp, \
+"result2.dat" using 1:3 title "ucd interval=2s" with lp, \
+"result5.dat" using 1:3 title "ucd interval=5s" with lp, \
+"result10.dat" using 1:3 title "ucd interval=10s" with lp
+
+

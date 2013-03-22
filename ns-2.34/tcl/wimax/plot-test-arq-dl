@@ -1,0 +1,28 @@
+reset
+set terminal post eps
+set output "test-arq-loss-dl.eps"
+set nogrid
+#set logscale y
+set xlabel "Data frame loss (%)" 
+set ylabel "End-to-End packet loss (%)"
+#set xrange [0:10]
+#set yrange [0:20]
+#set key 45,0.45
+set title "ARQ performance analysis (frame size=5ms)"
+plot "res_test_arq/results.dat" using 1:5 title "Packet loss without ARQ" with lp, \
+"res_test_arq/results.dat" using 1:6 title "Packet loss with ARQ" with lp
+
+reset
+set terminal post eps
+set output "test-arq-delay-dl.eps"
+set nogrid
+#set logscale y
+set xlabel "Data frame loss (%)" 
+set ylabel "Delay (s)"
+#set xrange [0:10]
+#set yrange [0:20]
+#set key 45,0.45
+set title "ARQ performance analysis (frame size=5ms)"
+plot "res_test_arq/results.dat" using 1:9 title "Delay without ARQ" with lp, \
+"res_test_arq/results.dat" using 1:10 title "Delay with ARQ" with lp
+

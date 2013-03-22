@@ -1,0 +1,59 @@
+reset
+#set terminal post eps
+#set output "res_test_be/test-be.eps"
+set terminal png
+set output "res_test_be/test-be.png"
+set nogrid
+set xlabel "Number of MSs" 
+set ylabel "Data rate (kb/s)"
+#set key 30,1100
+set title "Evaluation of Best-Effort scheduler\nTraffic per MS: Packet size = 1500 Bytes, interval=0.05s (240kb/s)"
+plot "res_test_be/results_ul.dat" using 1:($2/1000) title "UL Tx" with lp, \
+"res_test_be/results_ul.dat" using 1:($3/1000) title "UL Rx" with lp, \
+"res_test_be/results_dl.dat" using 1:($2/1000) title "DL Tx" with lp, \
+"res_test_be/results_dl.dat" using 1:($3/1000) title "DL Rx" with lp
+
+
+reset
+#set terminal post eps
+#set output "res_test_be/test-be_loss.eps"
+set terminal png
+set output "res_test_be/test-be_loss.png"
+set nogrid
+set xlabel "Number of MSs" 
+set ylabel "Number of drops due to bandwidth requests collision"
+#set key 30,1100
+set title "Evaluation of Best-Effort scheduler\nTraffic per MS: Packet size = 1500 Bytes, interval=0.05s (240kb/s)"
+plot "res_test_be/results_ul.dat" using 1:4 title "Uplink" with lp
+
+reset
+#set terminal post eps
+#set output "res_test_be/test-be_delay.eps"
+set terminal png
+set output "res_test_be/test-be_delay.png"
+set nogrid
+set xlabel "Number of MSs" 
+set ylabel "Time (s)"
+#set key 30,1100
+set title "Evaluation of Best-Effort scheduler\nTraffic per MS: Packet size = 1500 Bytes, interval=0.05s (240kb/s)\nLink=100Mb/s;1ms"
+plot "res_test_be/results_ul.dat" using 1:5 title "UL delay" with lp, \
+"res_test_be/results_ul.dat" using 1:6 title "UL jitter" with lp, \
+"res_test_be/results_dl.dat" using 1:5 title "DL delay" with lp, \
+"res_test_be/results_dl.dat" using 1:6 title "dL jitter" with lp
+
+
+reset
+#set terminal post eps
+#set output "res_test_be/test-be_delay2.eps"
+set terminal png
+set output "res_test_be/test-be_delay2.png"
+set nogrid
+set xlabel "Number of MSs" 
+set ylabel "Time (s)"
+set xrange [0:20]
+#set key 30,1100
+set title "Evaluation of Best-Effort scheduler\nTraffic per MS: Packet size = 1500 Bytes, interval=0.05s (240kb/s)\nLink=100Mb/s;1ms"
+plot "res_test_be/results_ul.dat" using 1:5 title "UL delay" with lp, \
+"res_test_be/results_ul.dat" using 1:6 title "UL jitter" with lp, \
+"res_test_be/results_dl.dat" using 1:5 title "DL delay" with lp, \
+"res_test_be/results_dl.dat" using 1:6 title "dL jitter" with lp

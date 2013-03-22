@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Bash file to run datarate simulations for different modulation and cyclic prefix
+# @author rouil
+
+RUN_PARALLEL=0              #indicates if we can run in parallel processes (will launch 7 processes)
+
+function check_files {
+   echo "Checking for necessary files in the current directory:"
+    if [ -e PED_A ]; then
+	echo "PED_A file found"
+    else
+	echo "PED_A not found. Creating symbolink link to ../../PED_A"
+	ln -s ../../PED_A
+    fi
+    
+    if [ -e BetaTable.txt ]; then
+	echo "BetaTable.txt found"
+    else
+	echo "BetaTable.txt not found. Creating symbolink link to ../../BetaTable.txt"
+	ln -s ../../BetaTable.txt
+    fi
+    
+    if [ -e BLER_LookupTable.txt ]; then
+	echo "BLER_LookupTable.txt found"
+    else
+	echo "BLER_LookupTable.txt not found. Creating symbolink link to ../../BLER_LookupTable.txt"
+	ln -s ../../BLER_LookupTable.txt
+    fi
+    echo "Check complete...run simulations"
+}
+
+function test_modulation {
+    modulation=$1
+    for cp in "0" "0.03125" "0.0625" "0.125" "0.25"; do
+	echo "Running for modulation" $modulation " and CP="$cp
+	ns datarate.tcl $modulation $cp &> /dev/null
+	
+	DATARATE=`grep ^r out_mod_${modulation}.res|grep "1 0 cbr"|awk 'BEGIN{first=-1; last=-1} {if (first==-1) {first=$2}; last=$2; i+=$6-0;} END {print (8*i/(last-first))}'`
+	echo " datarate = " $DATARATE
+	echo $modulation $cp $DATARATE >>res_datarate/result$modulation.dat
+	echo $modulation $cp $DATARATE >>res_datarate/result.dat
+	rm out_mod_${modulation}.res
+    done
+    if [ "$1" != "" ]; then
+	break
+    fi
+}
+
+#Main code
+if [ "$1" == "clean" ]; then
+	rm -fr res_datarate
+else
+    check_files
+    mkdir res_datarate
+
+    for mod in "1" "2" "3" "4" "5" "6" "7"; do
+	if [ "$RUN_PARALLEL" = "1" ]; then
+	    test_modulation $mod &
+	else
+	    test_modulation $mod 
+	fi
+    done
+    wait
+ 
+    gnuplot plot-datarate
+fi
+

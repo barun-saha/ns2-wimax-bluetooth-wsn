@@ -1,0 +1,57 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+#dir1=`dirname $mydir`
+#export PATH=$mydir:$dir1:$PATH
+#echo $PATH
+
+mruns () {
+    i=0
+    runs=$1
+    nn=$2
+    t=$3
+    rp=$4
+    c=$5
+    sf=$6
+    errmode=$7
+    logfile=nl-$nn-$t-$rp-$c-$sf-$errmode
+
+    shift 7
+
+    while [ $i -lt $runs ]; do
+        echo $i
+        echo "bt-nonliner-mm 5 1 $nn $t $rp udp $c $sf Manual $errmode $logfile $1 $2 $3 $4 $5 $6 $7 $8 $9"
+	$mydir/bt-nonliner-mm 5 1 $nn $t $rp udp $c $sf Manual $errmode $logfile $1 $2 $3 $4 $5 $6 $7 $8 $9
+
+        i=`expr $i + 1`
+    done
+}
+
+runtest() {
+    mruns $1 $2 90 DRP  0 $3 Off 50 90 1 lessTrace 0 0 10 10
+    mruns $1 $2 90 DRP 70 $3 Off 50 90 1 lessTrace 0 0 10 10
+    # mruns $1 $2 90 DRP 70 $3 BlueHoc 50 90 1 lessTrace 0 0 10 10
+    mruns $1 $2 90 MDRP  0 $3 Off 50 90 1 lessTrace 0 0 10 10
+    mruns $1 $2 90 MDRP 70 $3 Off 50 90 1 lessTrace 0 0 10 10
+    # mruns $1 $2 90 MDRP 70 $3 BlueHoc 50 90 1 lessTrace 0 0 10 10
+
+    n=`expr $2 - 1`
+    # postprocess2.pl 9000 nl-${2}* |head -n$n >fig${2}-nl.dat
+    $mydir/postprocess-nodestat-thr.pl nl-${2}* |head -n$n >fig${2}-nl.dat
+    # gnuplot $mydir/nl-fig${2}.gnu
+    # gnuplot $mydir/fig${2}b.gnu
+    if [ ${2} -eq 7 ]; then
+	x=1.6
+    else
+	x=2.6
+    fi
+    $mydir/rungnuplot.sh gnuplot 16 fig${2}-nl.dat fig${2}-nl.eps $x 0.75
+}
+
+if [ $# -lt 3 ]; then
+    echo
+    echo "$0 runs num-node T-sniff"
+    echo
+    exit 1
+fi
+runtest $1 $2 $3

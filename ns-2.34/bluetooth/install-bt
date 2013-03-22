@@ -1,0 +1,394 @@
+#!/bin/sh
+
+tmplog='.##78ahadfds0999e'
+tlines=40 
+
+dir0=`pwd`
+cd ..
+dir1=`pwd`
+cd ..
+dir2=`pwd`
+
+startdir=`basename $dir0`
+nsdir=`basename $dir1`
+nsallinonedir=`basename $dir2`
+patchdir=$dir0/$nsdir
+
+bttarball=bt.xx.tgz
+
+tcldebugdir=tcl-debug-2.0
+tcldebuglib=$dir2/$tcldebugdir/libtcldbg.a
+enabledebug=no
+enabletcldebug=no
+
+if [ $# -gt 0 ]; then 
+    if [ "x$1" = "x-d" ]; then
+	enabledebug=yes
+
+    elif [ "x$1" = "x-t" ]; then
+	if [ -d $tcldebugdir ]; then
+	    enabletcldebug=yes
+	    enabledebug=yes
+	else 
+	    echo
+	    echo "No $tcldebugdir found in $dir2. Please download it "
+	    echo "from "
+	    echo "          http://expect.nist.gov/tcl-debug/tcl-debug.tar.gz, "
+	    echo "and unpack it into $dir2."
+	    exit
+	    echo
+	fi
+
+    else 
+        echo
+        echo "./install-bt [-d|-t]"
+        echo "    Options:"
+        echo "    -d  --- enable gdb/ddd debug"
+        echo "    -t  --- enable tcldebug + gdb/ddd debug"
+        echo
+        exit
+    fi
+fi
+
+if [ -f $dir1/Makefile ]; then
+    echo "Looks like ns generated Makefile found.  Either you invoked "
+    echo " ./install-bt [-d|-t]"
+    echo "in the wrong directory, or ns has (attempted) been installed."
+    echo "Please have a fresh ns-all-in-one tarball, and use './instll-bt' "
+    echo "alone to do the whole installation."
+    exit
+fi
+
+usage() {
+    echo
+    echo "Cannot find ns directory."
+    echo "please check if you untar the tar ball in the correct directory."
+    echo
+    echo "directory tree"
+    echo
+    echo " |__ ns-allinone-2.xx --- ns-2.xx -- bluetooth -- ns-2.26"
+    echo "                    |             |            |_ ns-2.1b9a"
+    echo "                    |             |            |_ ..."
+    echo "                    |             |            |_ test"
+    echo "                    |             |_ common "
+    echo "                    |             |_ ... "
+    echo "                    |__ nam..."
+    echo "                    |__ ... "
+    echo
+
+    echo " You should 'tar zxvf $bttarball' in the directory 'ns-2.xx' "
+    echo
+    echo " You should run './install-bt' in the directory 'bluetooth' "
+    echo
+    cd $dir0
+    exit 1
+}
+
+no_longer_support() {
+    echo
+    echo
+    echo "This version of ns2 is no longer supported.  Please get the latest"
+    echo "version of ns2 from http://www.isi.edu/nsnam/ns/"
+    echo
+
+    exit 1
+}
+
+reprint_ns_comments() {
+    echo
+    echo "-----------------------------------------------------------------"
+    echo "Reprint ns installation comments."
+    echo "-----------------------------------------------------------------"
+    echo
+    tail -$tlines $tmplog
+}
+
+congt() {
+    echo "-----------------------------------------------------------------"
+    echo
+    echo "UCBT was installed sucessfully."
+
+    echo
+    echo "You can try some example in test/.  If you make changes to the source code,"
+    echo "type 'make' to recompile it."
+
+    echo
+    echo "Enjoy!"
+    echo
+}
+
+
+# apply necessary patches.
+
+cd $dir0
+
+if [ $nsdir = 'ns-2.29' ]
+then
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.29-p1 ]
+    then
+
+	# # for heavy load
+	# cd $dir1/common
+	# patch -p0 < $patchdir/scheduler.cc.patch
+
+	# # DSDV Loop fix -- optional
+	# cd $dir1/dsdv
+	# patch -p0 < $patchdir/dsdv.cc.patch
+
+	touch $patchdir/.ns-2.29-p1
+    fi
+
+elif [ $nsdir = 'ns-2.28' ]
+then
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.28-p1 ]
+    then
+
+	# gcc34 issue
+	cd $dir2/nam-1.11
+	patch -p0 < $patchdir/agent.h.patch
+
+	#gcc4 issue
+	cd $dir1/xcp
+	patch -p0 < $patchdir/xcpq.h.patch
+	patch -p0 < $patchdir/xcpq.cc.patch
+
+	#gcc4 virtual destructor warning
+	cd $dir1/common
+	patch -p0 < $patchdir/scheduler.h.patch
+
+	#gcc4.0.1 issue
+	cd $dir1/tora
+	patch -p0 < $patchdir/tora_neighbor.h.patch
+	cd $dir1/queue
+	patch -p0 < $patchdir/cbq.cc.patch
+	cd $dir1/diffusion3/filter_core/
+	patch -p0 < $patchdir/filter_core.hh.patch
+
+	# solaris x86 issue
+	cd $dir1/diffusion3/lib/nr/
+	patch -p0 < $patchdir/nr.hh.patch
+
+	# # for heavy load
+	# cd $dir1/common
+	# patch -p0 < $patchdir/scheduler.cc.patch
+
+	# # DSDV Loop fix -- optional
+	# cd $dir1/dsdv
+	# patch -p0 < $patchdir/dsdv.cc.patch
+
+	touch $patchdir/.ns-2.28-p1
+    fi
+
+elif [ $nsdir = 'ns-2.27' ]
+then
+    no_longer_support
+
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.27-p1 ]
+    then
+	cd $dir2/..
+	patch -p0 < $patchdir/install.diff
+	# patch -p0 < $patchdir/nr.hh.diff
+	patch -p0 < $patchdir/setdestMi.diff
+	patch -p0 < $patchdir/decMi.diff
+	patch -p0 < $patchdir/nlanrMi.diff
+
+	cd $dir2/tclcl-1.15
+	patch -p0 < $patchdir/tclcl.h.diff
+
+	cd $dir2/nam-1.10
+	patch -p0 < $patchdir/agent.h.diff
+
+	# following gcc3.4 patch was offered by 
+	#		Mathieu Robin <mathieu.robin@cs.tcd.ie>
+	cd $dir1/diffusion
+	patch -p0 < $patchdir/diffusion.h.diff
+	patch -p0 < $patchdir/diff_rate.cc.diff
+	patch -p0 < $patchdir/routing_table.cc.diff
+
+	cd $dir1/mobile
+	patch -p0 < $patchdir/god.cc.diff
+	patch -p0 < $patchdir/gridkeeper.cc.diff
+	patch -p0 < $patchdir/gridkeeper.h.diff
+
+	cd $dir1/diffusion3/lib/nr/
+	patch -p0 < $patchdir/nr.hh.diff
+
+	cd $dir1/linkstate
+	patch -p0 < $patchdir/ls.h.diff
+
+	cd $dir1/sctp
+	patch -p0 < $patchdir/sctp.cc.diff
+
+	cd $dir1/webcache
+	patch -p0 < $patchdir/webtraf.cc.diff
+
+	# patch -p0 < $patchdir/ns227.diff
+	# cd $dir2
+	# fix Makefile problem, by Simon Oosthoek <simon.oosthoek@ti-wmc.nl>
+	# patch -p0 < $patchdir/ns-2.27fix.diff
+	# patch -p0 < $patchdir/install.diff
+	# cd ns-2.27/diffusion3/lib/nr 
+	# patch -p0 < $patchdir/diffusion3_lib_nr_nr.diff
+	touch $patchdir/.ns-2.27-p1
+    fi
+
+elif [ $nsdir = 'ns-2.26' ]
+then
+    no_longer_support
+
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.26-p1 ]
+    then
+	# the patches are provided by Joerg Diederich <dieder@ibr.cs.tu-bs.de>
+	# to fix Pi segmentation.
+                                                                                
+	cd $dir1/queue
+	patch -p0 < $patchdir/pi.cc.patch
+	patch -p0 < $patchdir/pi.h.patch
+                                                                                
+	cd $dir1/tcl/test
+	patch -p0 < $patchdir/test-suite-pi.tcl.patch
+
+	cd $dir1/mobile
+	patch -p0 < $patchdir/shadowing-vis.cc.patch
+
+	touch $patchdir/.ns-2.26-p1
+    fi
+
+elif [ $nsdir = 'ns-2.1b9a' ]
+then
+    no_longer_support
+
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.1b9a-p1 ]
+    then
+	cd $dir2/..
+	patch -p0 < $patchdir/ns9a-gcc32.patch
+	touch ns-allinone-2.1b9a/tcl8.3.2/generic/tclStubInit.c
+	cd $dir1/mobile/ && patch -p0 < $patchdir/shadowing-vis.cc.patch
+	touch $patchdir/.ns-2.1b9a-p1
+    fi
+
+elif [ $nsdir = 'ns-2.1b8a' ]
+then
+    no_longer_support
+
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.1b8a-p1 ]
+    then
+	cd $dir2/..
+	patch -p0 < $patchdir/ns8a-gcc32.patch
+	touch ns-allinone-2.1b8a/tcl8.3.2/generic/tclStubInit.c
+	cd $dir1 && patch -p0 < $patchdir/queue.h.patch
+	touch $patchdir/.ns-2.1b8a-p1
+    fi
+
+elif [ $nsdir = 'ns-2.1b7a' ]
+then
+    no_longer_support
+
+    if [ $startdir != 'bluetooth' ]; then
+	. ./mklink.sh
+	dir0=$dir1/bluetooth
+	patchdir=$dir0/$nsdir
+    fi 
+    if [ ! -f $patchdir/.ns-2.1b7a-p1 ]
+    then
+	cd $dir2/..
+	patch -p0 < $patchdir/ns7a-gcc32.patch
+	cd $dir1 && patch -p0 < $patchdir/queue.h.patch
+	touch $patchdir/.ns-2.1b7a-p1
+    fi
+
+else
+    usage
+    exit 1
+fi
+
+# perform installation
+
+cd $patchdir
+./link-ns.sh
+
+# # avoid gcc 3.4 on Fedora core 3
+# if [ -f /usr/bin/gcc33 ]; then
+#     CC=gcc33
+#     export CC
+# fi
+# 
+# if [ -f /usr/bin/g++33 ]; then
+#     CCC=g++33
+#     export CCC
+# fi
+
+if [ $enabledebug = "yes" ]
+then
+    cd $dir2 && ./install | tee $tmplog
+    if tail -3 $tmplog | grep 'for related posts.' > /dev/null 2>&1; then
+	echo
+    else
+	exit 1
+    fi
+
+    if [ $enabletcldebug = "yes" ]; then
+	if [ ! -f $tcldebuglib ]; then
+	    cd $dir2/$tcldebugdir
+	    ./configure --prefix=$dir2
+	    make
+	    make install
+	fi
+	cd $patchdir
+	./enable-ns-debug.sh --enable-tcldebug
+
+    else 
+	cd $patchdir
+	./enable-ns-debug.sh
+    fi
+
+    cd $dir0/tools && make
+
+    cd $dir2
+    reprint_ns_comments
+    rm -rf $tmplog
+
+else
+    if cd $dir2 && ./install; then
+	cd $dir0/tools && make
+    else
+	exit 1
+    fi
+fi
+
+congt
+
+cd $dir0
+ln -f ../ns.exe . > /dev/null 2>&1
+ln -f ../ns . > /dev/null 2>&1
+

@@ -1,0 +1,130 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+
+. $mydir/func.sh
+
+usage () {
+    echo
+    echo "$1 <pktslt> <rpktslt> <num node> <finish time> <DRPB|DRP|MDRP> <udp|tcp> <collisondist> <T_sniff> <adhocRouting> <errmode> <thrput-file> <logstart> <logend> <logstep> <lessTrace|mtrace> <x1> <y1> <x2> <y2>"
+    echo
+}
+
+if [ $# -lt 11 ]; then
+    usage `basename $0`
+    exit 1
+fi
+
+pktslt=$1
+rpktslt=$2
+numnode=$3
+finishtime=$4
+br=$5
+transport=$6
+collisondist=$7
+tsniff=$8
+snatt=`expr $tsniff / 2`
+rt=$9
+
+shift
+errmode=$9
+shift
+logfile=$9
+shift
+shift
+shift
+
+if [ "A$7" != "A" ]; then
+    statstrttime=$7
+else
+    statstrttime=`expr  $finishtime / 2`
+fi
+if [ "A$8" != "A" ]; then
+    statendtime=$8
+else
+    statendtime=$finishtime
+fi
+if [ "A$9" != "A" ]; then
+    statstep=$9
+else
+    statstep=1
+fi
+
+shift 
+tracefm=$9
+
+shift
+shift
+shift
+shift
+
+rngx1=0
+rngy1=0
+rngx2=0
+rngy2=0
+if [ "A$9" != "A" ]; then
+    rngx1=$6
+    rngy1=$7
+    rngx2=$8
+    rngy2=$9
+fi
+
+nn=$numnode
+if [ $numnode -gt 4 ]; then
+    nn=`expr $nn + 4`
+fi
+if [ $numnode -gt 6 ]; then
+    nn=`expr $nn + 4`
+fi
+
+lst=`expr $numnode - 1`
+bralgm=$br
+collDist=$collisondist
+
+set_pkt_size $transport $pktslt
+
+dnm=nl-$numnode-$finishtime-$br-$collisondist-$tsniff-$rt-$errmode
+basen=${pktslt}${rpktslt}$transpt
+basen="`date +%m%d-%H%M%S`-$basen-$dnm"
+fn=$basen.tcl
+
+linkshed="PRR"
+
+gen_bt_nodes $nn $rt $bralgm $errmode $collDist $linkshed $tsniff $snatt $logfile $statstrttime $statendtime $statstep $rngx1 $rngy1 $rngx2 $rngy2 $fn
+
+echo "\$node(0) trace-all-nodeStat $logfile a" >> $fn
+#echo "\$node(0) trace-all-stat3 d-$logfile a" >> $fn
+
+if [ "A$tracefm" == "AlessTrace" ]; then
+    less_trace $fn
+fi
+
+if [ "$rt" = "Manual" ]; then
+    manual_path $src $dst $bralgm $fn
+fi
+
+intvl=0.015
+udppktsize=1400
+label=0
+if [ $transpt = "u" ]; then
+    gen_cbr $label $src $dst $pktszip $intvl $udppktsize $fn
+    echo "set nscmd \"\$cbr$label start\"" >> $fn
+else
+    gen_ftp $label $src $dst $pktszip $fn
+    echo "set nscmd \"\$ftp$label start\"" >> $fn
+fi
+
+# special case: no bridge, piconet
+# node 1 is the master
+if [ "$bralgm" = "noBR" ]; then
+    make-piconet $nn 1 $numconn $pktslt $rpktslt $src $fn
+else
+    make_nonlinear_mm $numnode $pktslt $rpktslt $fn
+fi
+
+
+make_finish $finishtime $fn
+
+echo "ns $fn > ${basen}.out"
+ns $fn > ${basen}.out
+

@@ -1,0 +1,31 @@
+
+Having a good understanding of the installation process helps when you 
+want to perform a upgrading instead of fresh re-installation.  
+The installation process takes the following steps:
+
+1. make symbolic link 'bluetooth -> ucbt-xxx'.
+2. apply patches to ns source code.  These patches are for ns source code 
+   itself, not particularly for ucbt.
+3. replace several ns source files modified by ucbt in bluetooth/ns-2.xx/.
+   Orignal ns files are renamed and replaced by linking to the files in
+   ucbt's folder.  This simplifies the synchronization with my CVS tree since
+   every file is in ucbt's folder.
+4. ns's install script is invoked to perform the installation.
+
+I have following suggestions about the upgrading process.
+
+1. If the change is small, do a 'make' in ucbt-xxx/ is fine.
+2. If new files are added or some files are deleted, you need to update
+   the file Makefile.in, then in 'ns-allinone-xxx/ns-xxx', perform a 
+   './configure' to generate the new Makefile.  If you are using 
+   cygwin, you need to run 
+   './configure --x-libraries=/usr/X11R6/lib --x-includes=/usr/X11R6/include' 
+   instead.  If you want the -g flag, edit Makefile to add it.
+   Then run 'make'.  If changes are extensive, espcially, header files are
+   changed, you need to do a 'make clean' before 'make'. 'make clean' 
+   in dir 'ns-allinone-xxx/ns-xxx' will rebuild ns completely. 'make clean' in 
+   dir 'bluetooth/' or 'ucbt-xxx/' is just fine most of time.
+3. If additional ns source files are changed, you need to update the 
+   script 'link-ns.sh' in bluetooth/ns-2.xxx/ and run it before 2.
+4. A fresh re-installation should always works.
+

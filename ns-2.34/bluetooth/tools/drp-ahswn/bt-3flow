@@ -1,0 +1,135 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+                                                                                
+. $mydir/func.sh
+
+usage () {
+    echo
+    echo "$1 <finish time> <DRPS|DRP|MDRP> <collisondist> <T_sniff> <adhocRouting> <errmode> <thrput-file> <st-f1> <st-f2> <st-f3> <logstart> <logend> <logstep> <lessTrace|mtrace> <x1> <y1> <x2> <y2>"
+    echo
+}
+
+if [ $# -lt 10 ]; then
+    usage `basename $0`
+    exit 1
+fi
+
+numnode=23
+finishtime=$1
+linkshed=$2
+shift
+br=$2
+collisondist=$3
+tsniff=$4
+snatt=`expr $tsniff / 2`
+rt=$5
+
+errmode=$6
+shift
+logfile=$6
+
+startt1=$7
+startt2=$8
+startt3=$9
+
+shift 3
+fint1=$7
+fint2=$8
+fint3=$9
+
+shift
+shift
+shift
+
+if [ "A$7" != "A" ]; then
+    statstrttime=$7
+else
+    statstrttime=`expr  $finishtime / 2`
+fi
+if [ "A$8" != "A" ]; then
+    statendtime=$8
+else
+    statendtime=$finishtime
+fi
+if [ "A$9" != "A" ]; then
+    statstep=$9
+else
+    statstep=1
+fi
+
+shift 
+tracefm=$9
+
+shift
+shift
+shift
+shift
+                                                                                
+rngx1=0
+rngy1=0
+rngx2=0
+rngy2=0
+if [ "A$9" != "A" ]; then
+    rngx1=$6
+    rngy1=$7
+    rngx2=$8
+    rngy2=$9
+fi
+
+
+nn=$numnode
+bralgm=$br
+collDist=$collisondist
+btr=$rt
+
+dnm=$finishtime-$br-$collisondist-$tsniff-$rt-$errmode
+
+snatt=`expr $tsniff / 2`
+
+pktslt=5
+rpktslt=1
+
+transport=udp
+set_pkt_size $transport $pktslt
+                                                                                
+basen=${pktslt}${rpktslt}$transpt
+basen="`date +%m%d-%H%M%S`-$basen-$dnm-3f2c"
+fn=$basen.tcl
+
+gen_bt_nodes $nn $rt $bralgm $errmode $collDist $linkshed $tsniff $snatt $logfile $statstrttime $statendtime $statstep $rngx1 $rngy1 $rngx2 $rngy2 $fn
+
+echo "\$node(10) trace-me-flowStat L10-$logfile a" >> $fn
+echo "\$node(16) trace-me-flowstat L16-$logfile a" >> $fn
+echo "\$node(22) trace-me-flowstat L22-$logfile a" >> $fn
+
+echo "\$node(3) trace-me-flowstat L3-$logfile a" >> $fn
+echo "\$node(13) trace-me-flowstat L13-$logfile a" >> $fn
+echo "\$node(9) trace-me-flowstat L9-$logfile a" >> $fn
+echo "\$node(19) trace-me-flowstat L19-$logfile a" >> $fn
+
+echo "\$node(0) trace-all-nodeStat $logfile a" >> $fn
+
+if [ "A$tracefm" == "AlessTrace" ]; then
+    less_trace $fn
+fi
+
+cat >> $fn <<EOF
+
+set startt1 $startt1
+set startt2 $startt2
+set startt3 $startt3
+
+set finisht1 $fint1
+set finisht2 $fint2
+set finisht3 $fint3
+
+EOF
+
+cat $mydir/topo-3flows >> $fn
+
+make_finish $finishtime $fn
+
+echo "ns $fn > ${basen}.out"
+ns $fn > ${basen}.out
+

@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# Bash file to run test various modulations and check propagation
+# @author rouil
+# Revisions:
+# 1.1 - 06/03/2008 : Add multi-seed configuration for better average
+#                    Add configuration for parallel simulations
+# 1.2 - 08/20/2008 : Changed loop to use distances up to 4000 m with steps of 50 m
+# 1.3 - 04/01/2009 : Adjusted loop from 300 to 950 m with step of 50m
+
+# Global configuration
+RES_DIR=res_test_modulation #output directory
+NB_SIM=1                    #number of simulations for average
+RANDOM_SEED=1               #indicate if random seed must be used (i.e. SEED=0)
+RUN_PARALLEL=0              #indicates if we can run in parallel processes (will launch 7 processes)
+
+function test_modulation {
+    
+    modulation=$1
+    echo "Number of simulations per configuration: $NB_SIM"    
+    distance=300
+    MAX_DISTANCE=950
+    while [ $distance -le $MAX_DISTANCE ]; do
+	echo "Running for profile " $modulation "distance " $distance "m "	    
+	echo -n "ul: "
+	SENT_AV=0
+	RECV_AV=0
+	BWR_AV=0
+	SIM=1
+	while [ $SIM -le $NB_SIM ]; do
+	    echo -n "${SIM}."
+	    if [ "$RANDOM_SEED" = "1" ]; then 
+			echo "ns test-be-modulation.tcl 0 $modulation ul $distance"
+			ns test-be-modulation.tcl 0 $modulation ul $distance &>/dev/null 
+	    else 
+			ns test-be-modulation.tcl $SIM $modulation ul $distance > log.t
+	    fi
+	    #SENT=`grep AGT out_mod_${modulation}.res | grep ^s| awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+	    SENT=`grep AGT out_mod_${modulation}.res | grep ^s -c| awk '{print (8*$1*1500/2)}'`
+		#RECV=`grep ^r out_mod_${modulation}.res | grep "1 0 cbr" | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6-20}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+		RECV=`grep ^r out_mod_${modulation}.res | grep -c "1 0 cbr" | awk '{print (8*$1*1500/2)}'`
+	    BWR=`grep -c BWR out_mod_${modulation}.res`
+	    SENT_AV=`echo $SENT $SENT_AV | awk '{print ($1+$2)}'`
+	    RECV_AV=`echo $RECV $RECV_AV | awk '{print ($1+$2)}'`
+	    BWR_AV=`echo $BWR $BWR_AV | awk '{print ($1+$2)}'`
+	    let SIM=SIM+1
+	done
+	SENT_AV=`echo $SENT_AV $NB_SIM | awk '{print ($1/$2)}'`
+	RECV_AV=`echo $RECV_AV $NB_SIM | awk '{print ($1/$2)}'`
+	BWR_AV=`echo $BWR_AV $NB_SIM | awk '{print ($1/$2)}'`
+	echo ""
+	echo "->" $SENT_AV $RECV_AV $BWR_AV
+	echo $distance $SENT_AV $RECV_AV $BWR_AV >>$RES_DIR/results_${modulation}_ul.dat
+	
+	echo -n "dl: "
+	SENT_AV=0
+	RECV_AV=0
+	BWR_AV=0
+	SIM=1
+	while [ $SIM -le $NB_SIM ]; do
+	    echo -n "${SIM}."
+	    if [ "$RANDOM_SEED" = "1" ]; then 
+			echo "ns test-be-modulation.tcl 0 $modulation dl $distance"
+			ns test-be-modulation.tcl 0 $modulation dl $distance &>/dev/null
+	    else
+		    ns test-be-modulation.tcl $SIM $modulation dl $distance > log.t
+	    fi
+	    #SENT=`grep "0 1" out_mod_${modulation}.res | grep ^+ | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+	    SENT=`grep "0 1" out_mod_${modulation}.res | grep ^+ -c| awk '{print (8*$1*1500/2)}'`	
+		#RECV=`grep ^r out_mod_${modulation}.res | grep AGT | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+		RECV=`grep ^r out_mod_${modulation}.res | grep -c AGT | awk '{print (8*$1*1500/2)}'`
+	    BWR=`grep -c BWR out_mod_${modulation}.res`
+	    SENT_AV=`echo $SENT $SENT_AV | awk '{print ($1+$2)}'`
+	    RECV_AV=`echo $RECV $RECV_AV | awk '{print ($1+$2)}'`
+	    BWR_AV=`echo $BWR $BWR_AV | awk '{print ($1+$2)}'`
+	    let SIM=SIM+1
+	done
+	SENT_AV=`echo $SENT_AV $NB_SIM | awk '{print ($1/$2)}'`
+	RECV_AV=`echo $RECV_AV $NB_SIM | awk '{print ($1/$2)}'`
+	BWR_AV=`echo $BWR_AV $NB_SIM | awk '{print ($1/$2)}'`
+	echo ""
+	echo "->" $SENT_AV $RECV_AV $BWR_AV
+	echo $distance $SENT_AV $RECV_AV $BWR_AV >>$RES_DIR/results_${modulation}_dl.dat
+	rm out_mod_${modulation}.res
+	let distance=distance+50
+    done 
+}
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    
+    for mod in "1" "2" "3" "4" "5" "6" "7"; do
+    #for mod in  "4" ; do
+	if [ "$RUN_PARALLEL" = "1" ]; then
+	    test_modulation $mod &
+	else
+	    test_modulation $mod 
+	fi
+    done
+    wait
+    gnuplot plot-test-modulation
+    gthumb $RES_DIR
+fi

@@ -1,0 +1,27 @@
+V -t * -v 1.0a5 -a 0
+A -t * -n 1 -p 0 -o 0xffffffff -c 31 -a 1
+A -t * -h 1 -m 2147483647 -s 0
+n -t * -a 0 -s 0 -S UP -v circle -c black -i black
+n -t * -a 1 -s 1 -S UP -v circle -c black -i black
+l -t * -s 0 -d 1 -S UP -r 2000000 -D 0.0050000000000000001 -c black -o right
++ -t 0.5 -s 0 -d 1 -p tcp -e 40 -c 0 -i 0 -a 0 -x {0.0 1.0 0 ------- null}
+- -t 0.5 -s 0 -d 1 -p tcp -e 40 -c 0 -i 0 -a 0 -x {0.0 1.0 0 ------- null}
+h -t 0.5 -s 0 -d 1 -p tcp -e 40 -c 0 -i 0 -a 0 -x {0.0 1.0 -1 ------- null}
+r -t 0.50516 -s 0 -d 1 -p tcp -e 40 -c 0 -i 0 -a 0 -x {0.0 1.0 0 ------- null}
++ -t 0.50516 -s 1 -d 0 -p ack -e 40 -c 0 -i 1 -a 0 -x {1.0 0.0 0 ------- null}
+- -t 0.50516 -s 1 -d 0 -p ack -e 40 -c 0 -i 1 -a 0 -x {1.0 0.0 0 ------- null}
+h -t 0.50516 -s 1 -d 0 -p ack -e 40 -c 0 -i 1 -a 0 -x {1.0 0.0 -1 ------- null}
+r -t 0.51032 -s 1 -d 0 -p ack -e 40 -c 0 -i 1 -a 0 -x {1.0 0.0 0 ------- null}
++ -t 0.51032 -s 0 -d 1 -p tcp -e 40 -c 0 -i 2 -a 0 -x {0.0 1.0 1 ------- null}
+- -t 0.51032 -s 0 -d 1 -p tcp -e 40 -c 0 -i 2 -a 0 -x {0.0 1.0 1 ------- null}
+h -t 0.51032 -s 0 -d 1 -p tcp -e 40 -c 0 -i 2 -a 0 -x {0.0 1.0 -1 ------- null}
++ -t 0.51032 -s 0 -d 1 -p tcp -e 140 -c 0 -i 3 -a 0 -x {0.0 1.0 1 ------- null}
+- -t 0.51048 -s 0 -d 1 -p tcp -e 140 -c 0 -i 3 -a 0 -x {0.0 1.0 1 ------- null}
+h -t 0.51048 -s 0 -d 1 -p tcp -e 140 -c 0 -i 3 -a 0 -x {0.0 1.0 -1 ------- null}
+r -t 0.51548 -s 0 -d 1 -p tcp -e 40 -c 0 -i 2 -a 0 -x {0.0 1.0 1 ------- null}
+r -t 0.51604 -s 0 -d 1 -p tcp -e 140 -c 0 -i 3 -a 0 -x {0.0 1.0 1 ------- null}
+v -t 0.51604 -e sim_annotation 0.51604 1 _o41 received data "my mesage"
++ -t 0.6 -s 1 -d 0 -p ack -e 40 -c 0 -i 4 -a 0 -x {1.0 0.0 1 ------- null}
+- -t 0.6 -s 1 -d 0 -p ack -e 40 -c 0 -i 4 -a 0 -x {1.0 0.0 1 ------- null}
+h -t 0.6 -s 1 -d 0 -p ack -e 40 -c 0 -i 4 -a 0 -x {1.0 0.0 -1 ------- null}
+r -t 0.60516 -s 1 -d 0 -p ack -e 40 -c 0 -i 4 -a 0 -x {1.0 0.0 1 ------- null}

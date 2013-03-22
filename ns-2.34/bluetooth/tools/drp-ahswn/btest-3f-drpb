@@ -1,0 +1,36 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+
+if [ $# -lt 1 ]; then
+    echo
+    echo "$0 runs "
+    echo
+    exit 1
+fi
+
+runs=$1
+
+# mkdir 3f-40-60-60
+# cd 3f-40-60-60
+# bt-3flow-n $runs 256 40 60 60 120 120 120 AWMMF
+# cd ..
+
+# mkdir 3f-40-60-60-80-120-120
+# cd 3f-40-60-60-80-120-120
+# bt-3flow-n $runs 256 40 60 60 80 120 120 AWMMF
+# cd ..
+
+#mkdir 3f-60-40-40-awmmf
+#cd 3f-60-40-40-awmmf
+#bt-3flow-n $runs 256 60 40 40 120 120 120 AWMMF
+#cd ..
+
+mkdir 3f-60-40-40-90-120-120-drpb
+cd 3f-60-40-40-90-120-120-drpb
+$mydir/bt-3flow-n-drpb $runs 256 60 40 40 90 120 120 PRR
+mkdir tcl out
+mv *.tcl tcl
+mv *.out out
+cd ..
+

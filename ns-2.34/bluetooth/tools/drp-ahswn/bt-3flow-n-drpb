@@ -1,0 +1,70 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+#dir1=`dirname $mydir`
+
+#export PATH=$mydir:$dir1:$PATH
+#echo $PATH
+
+mruns () {
+    i=0
+    runs=$1
+    linksched=$2
+    shift
+    t=$2
+    rp=$3
+    c=$4
+    sf=$5
+    errmode=$6
+    logfile=3f-$t-$rp-$c-$sf-$errmode
+
+    st1=$7
+    st2=$8
+    st3=$9
+
+    shift 3
+    fin1=$7
+    fin2=$8
+    fin3=$9
+
+    shift 9
+
+    while [ $i -lt $runs ]; do
+        echo $i
+        echo "bt-3flow $t $linksched $rp $c $sf Manual $errmode $logfile $st1 $st2 $st3 $fin1 $fin2 $fin3 $1 $2 $3 $4 $5 $6 $7 $8 $9"
+	$mydir/bt-3flow $t $linksched $rp $c $sf Manual $errmode $logfile $st1 $st2 $st3 $fin1 $fin2 $fin3 $1 $2 $3 $4 $5 $6 $7 $8 $9
+
+
+        i=`expr $i + 1`
+    done
+}
+
+runtest() {
+    mruns $1 $9 120 DRP  0 $2 Off $3 $4 $5 $6 $7 $8 20 120 1 lessTrace 0 0 10 10
+    mruns $1 $9 120 DRP 70 $2 Off $3 $4 $5 $6 $7 $8 20 120 1 lessTrace 0 0 10 10
+
+    l10="L10-3f-120-DRP-0-256-Off L10-3f-120-DRP-70-256-Off "
+    l16="L16-3f-120-DRP-0-256-Off L16-3f-120-DRP-70-256-Off "
+    l22="L22-3f-120-DRP-0-256-Off L22-3f-120-DRP-70-256-Off "
+        mruns $1 $9 120 DRPB  0 $2 Off $3 $4 $5 $6 $7 $8 20 120 1 lessTrace 0 0 10 10
+        mruns $1 $9 120 DRPB 70 $2 Off $3 $4 $5 $6 $7 $8 20 120 1 lessTrace 0 0 10 10
+	l10="$l10 L10-3f-120-DRPB-0-256-Off L10-3f-120-DRPB-70-256-Off"
+	l16="$l16 L16-3f-120-DRPB-0-256-Off L16-3f-120-DRPB-70-256-Off"
+	l22="$l22 L22-3f-120-DRPB-0-256-Off L22-3f-120-DRPB-70-256-Off"
+
+    # postprocess-thr.pl $l10 $l16 $l22 > 3f.dat
+    $mydir/postprocess-flowstat-thr.pl $l10 $l16 $l22 > 3f.dat
+    gnuplot $mydir/3f1-drpb.gnu
+    gnuplot $mydir/3f1a-drpb.gnu
+    gnuplot $mydir/3f1c-drpb.gnu
+    gnuplot $mydir/3f1ca-drpb.gnu
+}
+
+if [ $# -lt 8 ]; then
+    echo
+    echo "$0 runs T-sniff st-f1 st-f2 st-f3 fin-f1 fin-f2 fin-f3 [PRR|AWMMF]"
+    echo
+    exit 1
+fi
+runtest $1 $2 $3 $4 $5 $6 $7 $8 $9
+

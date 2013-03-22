@@ -1,0 +1,113 @@
+
+This software intends to implment a bluetooth low layer stack and necessary
+network extenstion under the ns-2 framework, in the hope to add 
+bluetooth network as the first class citizen in the simulation family.
+The whole bluetooth thing appears as a new mac/phy.  Well things 
+are not as simple as that, because significant efforts are needed to
+form the network.
+
+Some changes are made to some of the ns2 source files to house this new 
+member, but none of the existing functionalities of ns2 is affected.
+The UCBT module compiles out of box under the recent ns2 releases such
+as 2.27+.  That also means it can run on Windows via Cygwin.
+
+
+			Installation
+
+   See file INSTALLATION.  
+
+		      Upgration 
+   See file UPGRADE
+   
+
+		Interface & Implementation notes
+
+   BTnode is a normal ns node with different MAC/PHY.  Currently I view the 
+entire Bluetooth as a new MAC in the ns system.  BTNode inherents from Node. 
+Create a BTNode using the following interface:
+
+	set ns_         [new Simulator]
+	$ns_ node-config -macType Mac/Bluetooth ;# or Mac/BNEP
+
+	set addr 1
+	set node0 [$ns_ node $addr]
+
+	set statetime 0.1
+	$ns_ at $statetime "$node0 on"
+
+   Most the control interfaces are located in BTNode::command() (bt-node.cc).
+You should read that method to be familiar with all controls.  You can also 
+get a hint about which variables are settable at runtime in file ns-btnode.tcl.
+
+   BTNode has the following exclusive components besides those common to Node:
+
+   BNEP 
+	-- MAC interface to upper protocol.
+
+   L2CAP: 
+	-- Maitains Channels
+	-- mapping connection to L2cap channels
+	-- Mapping Channels to Connection Handle. M : 1 mapping
+	-- SAR
+
+   LMP:
+	-- Maintains Bluetooth device infomation database -- should move up!!
+	-- Maintains piconets
+	-- Mapping Connection Handle to LMP Link (ACL/SCO). 1:1 mapping
+	-- mapping Link to TxBuffer at Baseband
+
+   BaseBand:
+	-- page/inquiry/scan, etc.
+	-- Link Scheduler.
+	-- Frequency hopping kernel.
+	-- TxBuffers 
+	-- ARQ.
+
+   Different from the specs requirement of TDD scheme, we control the TDD by
+a schedule word at the Baseband.  Say, at current clk, if looking up this word 
+return M, we pick up a package at TxBuffer[M], and transmits it.  Obviously, 
+this word can be used to implement easily what the specs says: we let the word 
+return valid TxBuffer slot at Master transmitting slot for the master and 
+at slave transmitting slot for the slave. This sched word is also useful 
+for QoS mapping.  Link scheduler is implemented on the top of schedule word,
+because only tight link (like SCO) need to schedule as specified by the word.
+A non-qos ACL link is usually not specified by the word therefore can be 
+scheduled by the Link Scheduler.  
+  Another difference is, the master also have a CLK controller, though 
+normally set to CLKN.
+
+   Trace format is not fixed by now.  It's interfaced by two set of 
+commands: trace-all-xxx and trace-me-xxx.  The former has an effect on
+all BT device, while the latter only has an effect on the specific node.
+
+Phy layer is not explicitly
+implemented, the bottom protocal stack is baseband, which are interconnected
+so each baseband packet will be forwarded to all other basebands.
+Different LossMod
+to model packet loss can be specified, though there is only the
+table driven module used by BlueHoc project is available.  Package collision
+between different piconets can be detected.  
+
+Currently, the baseband is fairly complete. 
+Some minor things like clock wrapping around is not modelled.  
+Park/Unpark is not completed because it's quite complex and less useful.
+Clock drifting is being implenmented and should complete soon.
+Spec1.2 features like interlaced scan is implemented.  AFH is also in place
+in baseband but work in LMP is needed.  eSCO is not implemented at this
+moment.
+  Baseband(BB) can support 2 piconet parameters
+concurrently:  an active piconect and an possible SCO link of other piconet.
+This doesn't mean that BB has two sets of transmitter.  BB just switches 
+between the 2 piconet parameter before and after the SCO slots.  This happens
+at the slot granularity.  A lmp scheduled piconet switch would be much less
+frequent.
+
+LMP can handle as many sniffing, held, and parked piconets as you need,
+by taking suitable scheduling scheme.  Two HV3 SCO links from different
+piconets can be supported at the same time.  This is also the maximum capacity
+regarding 2 SCO piconets, since CLK is not aligned.
+
+  SCO traffic is handled seperated by SCO agents, which connect Application/
+Traffic generator and LMP/Baseband.  L2CAP doesn't handle SCO, as the specs
+specified.
+

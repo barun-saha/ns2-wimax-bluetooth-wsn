@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# Bash file to run test various modulations and check propagation
+# @author rouil
+# Revisions:
+# 1.1 - 06/03/2008 : Add multi-seed configuration for better average
+#                    Add configuration for parallel simulations
+# 1.2 - 08/20/2008 : Changed loop to use distances up to 4000 m with steps of 50 m
+
+# Global configuration
+RES_DIR=res_test_modulation #output directory
+NB_SIM=1                    #number of simulations for average
+RANDOM_SEED=1               #indicate if random seed must be used (i.e. SEED=0)
+RUN_PARALLEL=0              #indicates if we can run in parallel processes (will launch 7 processes)
+MAX_DISTANCE=5000
+DIST_INCR=500               # Increment of distance
+
+function test_modulation {
+    
+    modulation=$1
+
+    echo "Number of simulations per configuration: $NB_SIM"    
+    distance=1000    
+    while [ $distance -le $MAX_DISTANCE ]; do
+	    echo "Running for profile " $modulation "distance " $distance "m "	    
+	    echo -n "ul: "
+	    SENT_AV=0
+	    RECV_AV=0
+	    BWR_AV=0
+	    SIM=1
+	    while [ $SIM -le $NB_SIM ]; do
+	        echo -n "${SIM}."
+	        if [ "$RANDOM_SEED" = "1" ]; then 
+		    ns test-modulation.tcl 0 $modulation ul $distance &>/dev/null 
+	        else 
+		    ns test-modulation.tcl $SIM $modulation ul $distance &>/dev/null 
+	        fi
+	        SENT=`grep AGT out_mod_${modulation}.res | grep cbr | grep ^s| awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+	        RECV=`grep "1 0" out_mod_${modulation}.res | grep ^r | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6-20}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+	        #grep "1 0" out_mod_${modulation}.res | grep ^r | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6-20}END{if (start==0) {print 0}else{print "Kbps: ", 8*size/(1024*(stop-start))}}'
+	        BWR=`grep -c BWR out_mod_${modulation}.res`
+	        SENT_AV=`echo $SENT $SENT_AV | awk '{print ($1+$2)}'`
+	        RECV_AV=`echo $RECV $RECV_AV | awk '{print ($1+$2)}'`
+	        BWR_AV=`echo $BWR $BWR_AV | awk '{print ($1+$2)}'`
+	        let SIM=SIM+1
+	    done
+	    SENT_AV=`echo $SENT_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    RECV_AV=`echo $RECV_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    BWR_AV=`echo $BWR_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    echo ""
+	    echo "->" $SENT_AV $RECV_AV $BWR_AV
+	    echo $distance $SENT_AV $RECV_AV $BWR_AV >>$RES_DIR/results_${modulation}_ul.dat
+# Barun
+#let distance=distance+${DIST_INCR}
+#continue
+# End
+	    echo -n "dl: "
+	    SENT_AV=0
+	    RECV_AV=0
+	    BWR_AV=0
+	    SIM=1
+	    while [ $SIM -le $NB_SIM ]; do
+	        echo -n "${SIM}."
+	        if [ "$RANDOM_SEED" = "1" ]; then 
+		    ns test-modulation.tcl 0 $modulation dl $distance &>/dev/null
+	        else
+		    ns test-modulation.tcl $SIM $modulation dl $distance &>/dev/null
+	        fi
+	        SENT=`grep "0 1" out_mod_${modulation}.res | grep ^+ | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$2};stop=$2;size+=$6}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`	
+	        RECV=`grep AGT out_mod_${modulation}.res | grep cbr | grep ^r| awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{if (start==0) {print 0}else{print (8*size/(stop-start))}}'`
+	        #grep AGT out_mod_${modulation}.res | grep cbr | grep ^r | awk 'BEGIN{start=0;stop=0}{if (start==0) {start=$3};stop=$3;size+=$37}END{if (start==0) {print 0}else{print "stop-start:", (stop-start), "Kbps: ", 8*size/(1024*(stop-start))}}'
+	        BWR=`grep -c BWR out_mod_${modulation}.res`
+	        SENT_AV=`echo $SENT $SENT_AV | awk '{print ($1+$2)}'`
+	        RECV_AV=`echo $RECV $RECV_AV | awk '{print ($1+$2)}'`
+	        BWR_AV=`echo $BWR $BWR_AV | awk '{print ($1+$2)}'`
+	        let SIM=SIM+1
+	    done
+	    SENT_AV=`echo $SENT_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    RECV_AV=`echo $RECV_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    BWR_AV=`echo $BWR_AV $NB_SIM | awk '{print ($1/$2)}'`
+	    echo ""
+	    echo "->" $SENT_AV $RECV_AV $BWR_AV
+	    echo $distance $SENT_AV $RECV_AV $BWR_AV >>$RES_DIR/results_${modulation}_dl.dat
+	    #rm out_mod_${modulation}.res
+	    let distance=distance+${DIST_INCR}
+    done 
+}
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    rm -rf $RES_DIR
+    mkdir $RES_DIR
+    
+    for mod in "1" "2" "3" "4" "5" "6" "7"; do
+        #for mod in "7"; do
+	    if [ "$RUN_PARALLEL" = "1" ]; then
+	        test_modulation $mod &
+	    else
+	        test_modulation $mod 
+	    fi
+    done
+    wait
+    gnuplot plot-test-modulation
+    #gthumb $RES_DIR
+fi

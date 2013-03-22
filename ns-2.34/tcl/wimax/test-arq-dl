@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Bash file to run test ARQ 
+# @author rouil/sharat
+
+RES_DIR=res_test_arq #output directory
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    cd $RES_DIR
+
+    for loss in "0" "0.1" "0.15" "0.2" "0.25" "0.3" "0.35" "0.4"; do		
+	mkdir "Loss"$loss
+	cd "Loss"$loss
+	ln -s ../../../../PED_A
+	ln -s ../../../../BLER_LookupTable.txt
+	ln -s ../../../../BetaTable.txt
+	echo -n "Running for " $loss " data loss..."
+	# first test without arq
+	echo -n "no ARQ"
+	ns ../../test-arq-dl.tcl $loss 0 &> log.t
+	SENT=`grep AGT out.res | grep cbr | grep -c ^s`
+	RECV0=`grep AGT out.res | grep cbr | grep -c ^r `
+	LOSS0=`echo $SENT $RECV0 | awk '{print (1-($2/$1))}'`
+	DATARX0=`grep rx_data log.t | grep "Mac 1" | awk '{d+=$9; i++}END{print (d/i)}'`
+	DELAY0=`grep delay log.t | grep "Mac 0" | awk '{d+=$9; i++}END{print (d/i)}'`
+
+	# second test with arq
+	echo -n ", ARQ:"
+	ns ../../test-arq-dl.tcl $loss 1 &> log.t
+	RECV1=`grep AGT out.res | grep cbr | grep -c ^r`
+	LOSS1=`echo $SENT $RECV1 | awk '{print (1-($2/$1))}'`
+	DATARX1=`grep rx_data log.t | grep "Mac 1" | awk '{d+=$9; i++}END{print (d/i)}'`
+	DELAY1=`grep delay log.t | grep "Mac 0" | awk '{d+=$9; i++}END{print (d/i)}'`
+
+	echo $loss $SENT $RECV0 $RECV1 $LOSS0 $LOSS1 $DATARX0 $DATARX1 $DELAY0 $DELAY1
+	echo $loss $SENT $RECV0 $RECV1 $LOSS0 $LOSS1 $DATARX0 $DATARX1 $DELAY0 $DELAY1 >>../results.dat
+	rm out.res
+	rm log.t
+	cd ..
+    done
+    cd ..
+    gnuplot plot-test-arq-dl	
+    evince test-arq-delay-dl.eps
+    evince test-arq-loss-dl.eps
+fi

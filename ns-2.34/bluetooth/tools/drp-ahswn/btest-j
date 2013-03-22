@@ -1,0 +1,32 @@
+#!/bin/sh
+
+mydir=`dirname $0`
+dir1=`dirname $mydir`
+dir2=`dirname $dir1`
+
+export PATH=$mydir:$dir2:$PATH
+#echo $PATH
+
+if [ $# -lt 1 ]; then
+    echo
+    echo "$0 runs "
+    echo
+    exit 1
+fi
+
+runs=$1
+
+
+$mydir/btest-1flow $runs
+
+$mydir/btest-3f $runs
+
+$mydir/btest-3f-drpb $runs
+
+echo
+echo "====== following figures have been generated: "
+echo
+
+ls -l */*.eps
+
+

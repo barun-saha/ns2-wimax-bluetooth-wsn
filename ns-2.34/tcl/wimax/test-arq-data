@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# Bash file to run test ARQ 
+# @author rouil/sharat
+
+RES_DIR=res_test_arq #output directory
+RUN_PARALLEL=0              #indicates if we can run in parallel processes (will launch 7 processes)
+
+function test_basic {
+    for loss in "0" "0.1" "0.15" "0.2" "0.25" "0.3" "0.35" "0.4"; do		
+	echo -n "Running for " $loss " data loss..."
+	# first test without arq
+	echo -n "In Basic CID:no ARQ"
+	ns ../test-arq-data.tcl $loss 0 0 0 0 &> log ;#/dev/null
+	SENT=`grep AGT out0000.res | grep cbr | grep -c ^s`
+	RECV0=`grep "1 0 cbr" out0000.res | grep -c ^r `
+	RECV2=`grep AGT out0000.res | grep cbr | grep -c ^r `
+	
+	# second test with arq
+	echo -n ", ARQ:"
+	ns ../test-arq-data.tcl $loss 1 1 0 0 &> /dev/null
+	RECV1=`grep "1 0 cbr" out1100.res | grep -c ^r `
+	RECV3=`grep AGT out1100.res | grep cbr | grep -c ^r `
+
+	echo $loss $SENT "Without ARQ:" $RECV0 $RECV2 "----" "With ARQ:" $RECV1 $RECV3 
+	echo $loss $SENT  $RECV0 $RECV2 $RECV1 $RECV3 >> basic.dat
+	#rm out.res
+    done
+}
+
+function test_downlink {
+    for loss in "0" "0.1" "0.15" "0.2" "0.25" "0.3" "0.35" "0.4"; do		
+	echo -n "Running for " $loss " data loss..."
+	# first test without arq
+	echo -n "Downlink Data Cid:no ARQ"
+	ns ../test-arq-data.tcl $loss 0 0 1 0 &> /dev/null
+	SENT=`grep AGT out0010.res | grep cbr | grep -c ^s`
+	RECV0=`grep "1 0 cbr" out0010.res | grep -c ^r `
+	RECV2=`grep AGT out0010.res | grep cbr | grep -c ^r `
+	
+	# second test with arq
+	echo -n ", ARQ:"
+	ns ../test-arq-data.tcl $loss 1 1 1 0 &> /dev/null
+	RECV1=`grep "1 0 cbr" out1110.res | grep -c ^r `
+	RECV3=`grep AGT out1110.res | grep cbr | grep -c ^r `
+
+	echo $loss $SENT "Without ARQ:" $RECV0 $RECV2 "----" "With ARQ:" $RECV1 $RECV3 
+	echo $loss $SENT  $RECV0 $RECV2 $RECV1 $RECV3 >> downlink.dat
+	#rm out.res
+    done
+}
+
+function test_uldl {
+    for loss in "0" "0.1" "0.15" "0.2" "0.25" "0.3" "0.35" "0.4"; do		
+	echo -n "Running for " $loss " data loss..."
+	# first test without arq
+	echo -n "Data Cid on UL/DL: no ARQ"
+	ns ../test-arq-data.tcl $loss 0 0 1 1 &> /dev/null
+	SENT=`grep AGT out0011.res | grep cbr | grep -c ^s`
+	RECV0=`grep "1 0 cbr" out0011.res | grep -c ^r `
+	RECV2=`grep AGT out0011.res | grep cbr | grep -c ^r `
+	
+	# second test with arq
+	echo -n ", ARQ:"
+	ns ../test-arq-data.tcl $loss 1 1 1 1 &> /dev/null
+	RECV1=`grep "1 0 cbr" out1111.res | grep -c ^r `
+	RECV3=`grep AGT out1111.res | grep cbr | grep -c ^r `
+
+	echo $loss $SENT "Without ARQ:" $RECV0 $RECV2 "----" "With ARQ:" $RECV1 $RECV3 
+	echo $loss $SENT  $RECV0 $RECV2 $RECV1 $RECV3 >> dlul.dat
+	#rm out.res
+    done
+}
+
+if [ "$1" == "clean" ]; then
+    rm -fr $RES_DIR
+else
+    mkdir $RES_DIR
+    cd $RES_DIR
+    ln -s ../../../PED_A
+    ln -s ../../../BLER_LookupTable.txt
+    ln -s ../../../BetaTable.txt
+    if [ "$RUN_PARALLEL" = "1" ]; then
+	test_basic &
+	test_downlink &
+	test_uldl &
+    else
+	test_basic    
+	test_downlink
+	test_uldl
+    fi
+    wait
+    cd ..
+fi

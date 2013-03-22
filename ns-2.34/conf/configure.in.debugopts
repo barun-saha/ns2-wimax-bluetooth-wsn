@@ -1,0 +1,17 @@
+dnl autoconf options for random debugging
+dnl $Header: /home/rouil/cvsroot/ns-2.34/conf/configure.in.debugopts,v 1.1.1.1 2008/04/11 18:40:29 rouil Exp $ (LBL)
+
+
+if test x$default_classinstvar = x
+then
+	default_classinstvar=no
+fi
+
+dnl this next option should be outdated
+AC_ARG_ENABLE(tclcl-classinstvar,[--enable-tclcl-classinstvar	assume classinstvars are present in tclcl],[enable_classinstvar=$enableval],[enable_classinstvar=$default_classinstvar])
+if test "$enable_classinstvar" = "yes";
+then
+	V_DEFINE="-DTCLCL_CLASSINSTVAR $V_DEFINE"
+fi
+
+

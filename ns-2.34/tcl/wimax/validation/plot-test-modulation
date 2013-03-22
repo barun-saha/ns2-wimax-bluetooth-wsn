@@ -1,0 +1,45 @@
+reset
+#set terminal post eps
+#set output "res_test_modulation/test-modulation_ul.eps"
+set terminal png
+set output "res_test_modulation/test-modulation_ul.png"
+set nogrid
+#set logscale y
+set xlabel "Distance from BS (m)" 
+set ylabel "Data rate (kb/s)"
+#set xrange [3700:3800]
+#set yrange [0:20]
+#set key 45,0.45
+set title "Evaluation of Uplink Best-Effort scheduler \n(channel bandwidth=10MHz, DL ratio = 0.66)\nApplication: CBR 1500 Bytes/0.0012s (10Mb/s)"
+plot "res_test_modulation/results_1_ul.dat" using 1:($3/1000) title "Modulation: BPSK (1/2)" with lp, \
+"res_test_modulation/results_2_ul.dat" using 1:($3/1000) title "Modulation: QPSK (1/2)" with lp, \
+"res_test_modulation/results_3_ul.dat" using 1:($3/1000) title "Modulation: QPSK (3/4)" with lp, \
+"res_test_modulation/results_4_ul.dat" using 1:($3/1000) title "Modulation: 16QAM (1/2)" with lp, \
+"res_test_modulation/results_5_ul.dat" using 1:($3/1000) title "Modulation: 16QAM (3/4)" with lp, \
+"res_test_modulation/results_6_ul.dat" using 1:($3/1000) title "Modulation: 64QAM (2/3)" with lp, \
+"res_test_modulation/results_7_ul.dat" using 1:($3/1000) title "Modulation: 64QAM (3/4)" with lp
+
+reset
+#set terminal post eps
+#set output "res_test_modulation/test-modulation_dl.eps"
+set terminal png
+set output "res_test_modulation/test-modulation_dl.png"
+set nogrid
+#set logscale y
+set xlabel "Distance from BS (m)" 
+set ylabel "Data rate (kb/s)"
+#set xrange [3700:3800]
+#set yrange [0:20]
+#set key 45,0.45
+set title "Evaluation of Downlink Best-Effort scheduler \n(channel bandwidth=10MHz, DL ratio = 0.66)\nApplication: CBR 1500 Bytes/0.0012s (10Mb/s)"
+plot "res_test_modulation/results_1_dl.dat" using 1:($3/1000) title "Modulation: BPSK (1/2)" with lp, \
+"res_test_modulation/results_2_dl.dat" using 1:($3/1000) title "Modulation: QPSK (1/2)" with lp, \
+"res_test_modulation/results_3_dl.dat" using 1:($3/1000) title "Modulation: QPSK (3/4)" with lp, \
+"res_test_modulation/results_4_dl.dat" using 1:($3/1000) title "Modulation: 16QAM (1/2)" with lp, \
+"res_test_modulation/results_5_dl.dat" using 1:($3/1000) title "Modulation: 16QAM (3/4)" with lp, \
+"res_test_modulation/results_6_dl.dat" using 1:($3/1000) title "Modulation: 64QAM (2/3)" with lp, \
+"res_test_modulation/results_7_dl.dat" using 1:($3/1000) title "Modulation: 64QAM (3/4)" with lp
+
+
+
+

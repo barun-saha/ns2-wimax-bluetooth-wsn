@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Bash file to run test handover
+# @author rouil
+
+source ns-parse-lib.sh
+
+RES_DIR=res_handover #output directory
+
+if [ "$1" == "clean" ]; then
+    rm -r $RES_DIR
+else
+    mkdir $RES_DIR
+    cd $RES_DIR
+
+    ln -s ../../../../PED_A
+    ln -s ../../../../BLER_LookupTable.txt
+    ln -s ../../../../BetaTable.txt
+    echo "Running handover test"
+
+    ns ../handover.tcl &> log.t
+    
+    SENT=`collect_datarate "out.res" "^+.*0 1 cbr" "0"`
+    RECV=`collect_datarate "out.res" "^r.*AGT.*cbr" "1"`
+    DELAY_JITTER=`collect_delay_jitter "out.res" "^+.*0 1 cbr" "0" "^r.*AGT.*cbr" "1"`
+    echo $nbMNs $SENT $RECV $DELAY_JITTER
+    
+    #get the timestamp of packets sent
+    grep "^+.*0 1 cbr" out.res | awk '{print ("+ "$11" "$2)}' >tmp.dat
+    grep "^r.*AGT.*cbr" out.res | awk '{print ("r "$47" "$3)}' >>tmp.dat
+
+    cat tmp.dat | awk '{if ($1=="+") { if ($2 in start) {} else {start[$2]=$3;}} else {if ($2 in stop) {} else {print $2" "start[$2]" "$3}}}' >delay.dat
+
+    rm out.res
+    rm log.t
+    cd ..
+
+    gnuplot plot-handover	
+fi

@@ -3,7 +3,7 @@ ns2-wimax-bluetooth-wsn
 
 NS 2.34 source code patched with the modules for WiMax, Bluetooth and WSNs. 
 
-This has been tested with Ubuntu 10.04 on a 32-bit machine, and used with the [ANT Virtual Lab]. Making the patched source code available for public use. However, no guarantee or validation of any sort is provided.
+This has been tested with Ubuntu 10.04 on 32-bit machines, and used with the [ANT Virtual Lab]. Making the patched source code available for public use. However, no guarantee or validation of any sort is provided.
 
 Source of the patches used here:
 - WiMax: [ns2-wimax-awg]

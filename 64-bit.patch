@@ -1,0 +1,49 @@
+diff -ur work/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bnep.cc work-64/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bnep.cc
+--- work/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bnep.cc	2015-11-02 12:03:12.836974358 +0530
++++ work-64/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bnep.cc	2015-11-02 12:25:50.768980921 +0530
+@@ -58,6 +58,11 @@
+ #include "lmp-piconet.h"
+ #include "scat-form.h"
+ 
++// Begin change - Soumen Moulik - 02/11/2015
++// header added for typecast precision change in 64-bit 
++#include <inttypes.h>
++// End change - Soumen Moulik - 02/11/2015
++
+ #define BUFFSIZE 1024
+ 
+ int hdr_bnep::offset_;
+@@ -345,8 +350,13 @@
+     }
+     _current = _current->next;
+ 
++// Begin change - Soumen Moulik - 02/11/2015
++// typecast precision change for 64-bit 
++    //printf("%d %f bnepSched p:%x %f\n", bd_addr_, s.clock(),
++	   //(unsigned int) _current->pico, _current->length);
+     printf("%d %f bnepSched p:%x %f\n", bd_addr_, s.clock(),
+-	   (unsigned int) _current->pico, _current->length);
++	   (inptr_t) _current->pico, _current->length);
++// End change - Soumen Moulik - 02/11/2015
+ 
+     lmp_->wakeup(_current->pico);
+ 
+diff -ur work/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bt.h work-64/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bt.h
+--- work/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bt.h	2015-11-02 12:03:12.836974358 +0530
++++ work-64/ns2-wimax-bluetooth-wsn/ns-2.34/bluetooth/bt.h	2015-11-02 12:20:38.848979414 +0530
+@@ -345,8 +345,13 @@
+ typedef unsigned short uint16_t;
+ // typedef int int32_t;
+ // typedef unsigned int uint32_t;
+-typedef long long int int64_t;
+-typedef unsigned long long int uint64_t;
++// Begin change - Soumen Moulik - 02/11/2015
++// Changes for 64-bit
++//typedef long long int int64_t;
++//typedef unsigned long long int uint64_t;
++typedef long int int64_t;
++typedef long unsigned int uint64_t;
++// End change - Soumen Moulik - 02/11/2015
+ 
+ typedef uint8_t uchar;
+ 

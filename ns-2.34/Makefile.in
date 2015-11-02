@@ -33,8 +33,13 @@ MANDEST	= @prefix@/man
 BLANK	= # make a blank space.  DO NOT add anything to this line
 
 # The following will be redefined under Windows (see WIN32 lable below)
-CC	= @CC@
-CPP	= @CXX@
+# Begin change - Soumen Moulik - 01/11/2015
+# Following two lines commented, and two new lines added
+#CC	= @CC@
+#CPP	= @CXX@
+CC	= @CC@-4.4
+CPP	= @CXX@-4.4
+# End change - Soumen Moulik - 01/11/2015
 LINK	= $(CPP)
 LINK_SHLIB = @SHLIB_LD@
 MKDEP	= ./conf/mkdep

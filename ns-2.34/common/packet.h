@@ -725,16 +725,24 @@ struct hdr_rca {
        inline void set_meta(const char* data) {
                 meta_size_ = strlen(data);
                 if (meta_size_ > maxmetasize()) {
-	                printf("Error:  Meta size %d too large (max = %d).\n", meta_size_, maxmetasize());
-                  	exit(1);
+			// begin change - Soumen Moulik - 01/11/2015
+			// following two lines commented, and one new line added
+	                //printf("Error:  Meta size %d too large (max = %d).\n", meta_size_, maxmetasize());
+                  	//exit(1);
+			printf("Meta size = %d \n", meta_size_);
+			//end change - Soumen Moulik - 01/11/2015
                 }
 	        memcpy(meta_, data, meta_size_+1);
 	}
 	inline void set_meta(const char * data, int size) {
 		if (size > maxmetasize())
 		{
-			printf("Error: Meta size %d too large (max = %d).\n", size, maxmetasize());
-			exit(1);
+			// begin change - Soumen Moulik - 01/11/2015
+			// following two lines commented, and one new line added
+			//printf("Error: Meta size %d too large (max = %d).\n", size, maxmetasize());
+			//exit(1);
+			printf("Meta size %d \n", size);
+			//end change - Soumen Moulik - 01/11/2015
 		}
 		memcpy(meta_, data, size);
 		meta_size_ = size;
